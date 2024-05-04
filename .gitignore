@@ -1,0 +1,8 @@
+ent/*
+!ent/generate.go
+!ent/schema/
+
+.env
+
+disgord
+disgord.db
