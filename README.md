@@ -28,4 +28,7 @@ go build
 # or
 go run main.go
 ```
+
 5. access through `localhost:8080`
+
+6. check APIs at `/swagger/index.html`
