@@ -4,18 +4,17 @@ import (
 	"context"
 
 	"disgord/ent"
-
-	"github.com/gin-gonic/gin"
 )
 
-type Controller struct {
-	Router *gin.Engine
-	Ctx    context.Context
-	Client *ent.Client
-}
+type Controller struct{}
 
-func (controller Controller) Init() {
-	controller.InitAuth()
-	controller.InitUser()
-	controller.InitChat()
+var (
+	ctx    context.Context
+	client *ent.Client
+)
+
+func NewController(_ctx context.Context, _client *ent.Client) *Controller {
+	ctx = _ctx
+	client = _client
+	return &Controller{}
 }

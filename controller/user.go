@@ -9,49 +9,45 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (controller Controller) InitUser() {
-	group := controller.Router.Group("/user")
+func (*Controller) GetAllUsers(c *gin.Context) {
+	users, err := client.User.
+		Query().
+		Select(user.FieldID).
+		Select(user.FieldUsername).
+		All(ctx)
 
-	group.GET("", func(c *gin.Context) {
-		users, err := controller.Client.User.
-			Query().
-			Select(user.FieldID).
-			Select(user.FieldUsername).
-			All(controller.Ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
 
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
+	c.JSON(http.StatusOK, users)
+}
 
-		c.JSON(http.StatusOK, users)
-	})
+func (*Controller) GetUserById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "failed to read id",
+		})
+		return
+	}
 
-	group.GET("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "failed to read id",
-			})
-			return
-		}
+	user, err := client.User.
+		Query().
+		Where(user.ID(id)).
+		Select(user.FieldID).
+		Select(user.FieldUsername).
+		Only(ctx)
 
-		user, err := controller.Client.User.
-			Query().
-			Where(user.ID(id)).
-			Select(user.FieldID).
-			Select(user.FieldUsername).
-			Only(controller.Ctx)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
 
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
-				"message": "cannot find user",
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, user)
-	})
+	c.JSON(http.StatusOK, user)
 }

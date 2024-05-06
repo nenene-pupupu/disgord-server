@@ -1,0 +1,33 @@
+definitions:
+  controller.Auth:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+info:
+  contact: {}
+  title: disGOrd API
+paths:
+  /auth/sign-in:
+    post:
+      parameters:
+      - description: auth
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/controller.Auth'
+      responses: {}
+      tags:
+      - Auth
+  /auth/sign-up:
+    post:
+      responses: {}
+      tags:
+      - Auth
+swagger: "2.0"
