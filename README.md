@@ -6,10 +6,11 @@
 go version
 ```
 
-2. get packages and generate codes
+2. download dependencies and generate codes
 ```
-go get
-go generate ./ent
+go get ./...
+go generate ./...
+go mod tidy
 ```
 
 3. create `.env` file and set `SECRET`
