@@ -9,6 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetAllUsers godoc
+// @Tags	user
+// @Router	/user [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
 	users, err := client.User.
 		Query().
@@ -26,6 +29,10 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUserById godoc
+// @Tags	user
+// @Router	/user/{id} [get]
+// @Param	id path int true "id"
 func (*Controller) GetUserById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

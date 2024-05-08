@@ -6,6 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetAllChats godoc
+// @Tags	chat
+// @Router	/chat [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	chats, err := client.Chat.
 		Query().

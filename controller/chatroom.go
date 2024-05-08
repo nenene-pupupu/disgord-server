@@ -9,6 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetAllChatrooms godoc
+// @Tags	chatroom
+// @Router	/chatroom [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	chatrooms, err := client.Chatroom.
 		Query().
@@ -24,6 +27,10 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 	c.JSON(http.StatusOK, chatrooms)
 }
 
+// GetChatroomById godoc
+// @Tags	chatroom
+// @Router	/chatroom/{id} [get]
+// @Param	id path int true "id"
 func (*Controller) GetChatroomById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -48,6 +55,10 @@ func (*Controller) GetChatroomById(c *gin.Context) {
 	c.JSON(http.StatusOK, chatroom)
 }
 
+// CreateChatroom godoc
+// @Tags	chatroom
+// @Router	/chatroom [post]
+// @Param	name body string true "name"
 func (*Controller) CreateChatroom(c *gin.Context) {
 	var body struct {
 		Name string

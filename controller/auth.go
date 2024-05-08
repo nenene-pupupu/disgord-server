@@ -16,7 +16,7 @@ type Auth struct {
 }
 
 // SignIn godoc
-// @Tags	Auth
+// @Tags	auth
 // @Router	/auth/sign-in [post]
 // @Param	auth body controller.Auth true "auth"
 func (*Controller) SignIn(c *gin.Context) {
@@ -53,7 +53,7 @@ func (*Controller) SignIn(c *gin.Context) {
 }
 
 // SignUp godoc
-// @Tags	Auth
+// @Tags	auth
 // @Router	/auth/sign-up [post]
 func (*Controller) SignUp(c *gin.Context) {
 	var body struct {
