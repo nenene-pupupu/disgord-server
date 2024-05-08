@@ -123,3 +123,29 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, chatroom)
 }
+
+// DeleteChatroom godoc
+// @Tags	chatroom
+// @Router	/chatroom/{id} [delete]
+// @Param	id path int true "id"
+func (*Controller) DeleteChatroom(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "failed to read id",
+		})
+		return
+	}
+
+	err = client.Chatroom.
+		DeleteOneID(id).
+		Exec(ctx)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chatroom",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}

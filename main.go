@@ -55,6 +55,7 @@ func main() {
 		chatroom.GET("/:id", c.GetChatroomById)
 		chatroom.POST("", c.CreateChatroom)
 		chatroom.PATCH("/:id", c.UpdateChatroom)
+		chatroom.DELETE("/:id", c.DeleteChatroom)
 	}
 
 	chat := r.Group("/chat")
