@@ -85,6 +85,11 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 	c.JSON(http.StatusOK, chatroom)
 }
 
+// UpdateChatroom godoc
+// @Tags	chatroom
+// @Router	/chatroom/{id} [patch]
+// @Param	id path int true "id"
+// @Param	name body string true "name"
 func (*Controller) UpdateChatroom(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
