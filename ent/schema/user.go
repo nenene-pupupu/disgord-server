@@ -23,9 +23,6 @@ func (User) Fields() []ent.Field {
 
 		field.String("display_name"),
 
-		field.JSON("chatroom_ids", []int{}).
-			Default([]int{}),
-
 		field.Time("created_at").
 			Default(time.Now),
 
