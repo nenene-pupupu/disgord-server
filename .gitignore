@@ -2,6 +2,8 @@ ent/*
 !ent/generate.go
 !ent/schema/
 
+docs/
+
 .env
 
 disgord
