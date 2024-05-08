@@ -46,13 +46,13 @@ func main() {
 	user := r.Group("/user")
 	{
 		user.GET("", c.GetAllUsers)
-		user.GET("/:id", c.GetUserById)
+		user.GET("/:id", c.GetUserByID)
 	}
 
 	chatroom := r.Group("/chatroom")
 	{
 		chatroom.GET("", c.GetAllChatrooms)
-		chatroom.GET("/:id", c.GetChatroomById)
+		chatroom.GET("/:id", c.GetChatroomByID)
 		chatroom.POST("", c.CreateChatroom)
 		chatroom.PATCH("/:id", c.UpdateChatroom)
 		chatroom.DELETE("/:id", c.DeleteChatroom)
@@ -66,9 +66,9 @@ func main() {
 	ws := r.Group("/ws")
 	{
 		ws.GET("", c.GetWebsocket)
-		// ws.GET("/:chatroomId", func(ctx *gin.Context) {})
-		// ws.GET("/:chatroomId/voice", func(ctx *gin.Context) {})
-		// ws.GET("/:chatroomId/video", func(ctx *gin.Context) {})
+		// ws.GET("/:chatroomID", func(ctx *gin.Context) {})
+		// ws.GET("/:chatroomID/voice", func(ctx *gin.Context) {})
+		// ws.GET("/:chatroomID/video", func(ctx *gin.Context) {})
 		go c.HandleBroadcast()
 	}
 

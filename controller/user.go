@@ -29,11 +29,11 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUserById godoc
+// GetUserByID godoc
 // @Tags	user
 // @Router	/user/{id} [get]
 // @Param	id path int true "id"
-func (*Controller) GetUserById(c *gin.Context) {
+func (*Controller) GetUserByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

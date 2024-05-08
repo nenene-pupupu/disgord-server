@@ -27,11 +27,11 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 	c.JSON(http.StatusOK, chatrooms)
 }
 
-// GetChatroomById godoc
+// GetChatroomByID godoc
 // @Tags	chatroom
 // @Router	/chatroom/{id} [get]
 // @Param	id path int true "id"
-func (*Controller) GetChatroomById(c *gin.Context) {
+func (*Controller) GetChatroomByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
