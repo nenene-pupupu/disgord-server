@@ -29,11 +29,11 @@ func (Chatroom) Fields() []ent.Field {
 // Edges of the Chatroom.
 func (Chatroom) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type),
-
 		edge.To("owner", User.Type).
 			Unique(),
 
 		edge.To("chats", Chat.Type),
+
+		// edge.To("members", User.Type),
 	}
 }

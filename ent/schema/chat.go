@@ -16,8 +16,6 @@ type Chat struct {
 // Fields of the Chat.
 func (Chat) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("username"),
-
 		field.String("content"),
 
 		field.Time("created_at").
@@ -30,6 +28,10 @@ func (Chat) Fields() []ent.Field {
 func (Chat) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("chatroom", Chatroom.Type).
+			Ref("chats").
+			Unique(),
+
+		edge.From("sender", User.Type).
 			Ref("chats").
 			Unique(),
 	}
