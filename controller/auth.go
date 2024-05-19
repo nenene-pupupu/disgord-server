@@ -5,6 +5,7 @@ import (
 
 	"disgord/ent/auth"
 	"disgord/ent/user"
+	"disgord/jwt"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -46,8 +47,16 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
+	tokenString, err := jwt.IssueToken(auth.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to issue token",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "success",
+		"accessToken": tokenString,
 	})
 }
 
