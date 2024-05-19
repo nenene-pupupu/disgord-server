@@ -2,22 +2,28 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
 
+type UserDao struct {
+	ID          int    `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+}
+
 // GetAllUsers godoc
 // @Tags	user
 // @Router	/user [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
-	users, err := client.User.
-		Query().
+	var users []UserDao
+	err := client.User.Query().
 		Select(user.FieldID).
 		Select(user.FieldUsername).
-		All(ctx)
+		Select(user.FieldDisplayName).
+		Scan(ctx, &users)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -32,22 +38,25 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 // GetUserByID godoc
 // @Tags	user
 // @Router	/user/{id} [get]
-// @Param	id path int true "id"
+// @Param	uri path controller.GetUserByID.Uri true "path"
 func (*Controller) GetUserByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read id",
-		})
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
 		return
 	}
 
-	user, err := client.User.
+	var users []UserDao
+	err := client.User.
 		Query().
-		Where(user.ID(id)).
+		Where(user.ID(uri.ID)).
 		Select(user.FieldID).
 		Select(user.FieldUsername).
-		Only(ctx)
+		Select(user.FieldDisplayName).
+		Scan(ctx, &users)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -56,5 +65,5 @@ func (*Controller) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, users[0])
 }

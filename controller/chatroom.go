@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"disgord/ent/chatroom"
 
@@ -12,7 +11,17 @@ import (
 // GetAllChatrooms godoc
 // @Tags	chatroom
 // @Router	/chatroom [get]
+// @Param	q query controller.GetAllChatrooms.Query true "query"
 func (*Controller) GetAllChatrooms(c *gin.Context) {
+	type Query struct {
+		UserID int `form:"userID" binding:"omitempty"`
+	}
+
+	var query Query
+	if err := c.BindQuery(&query); err != nil {
+		return
+	}
+
 	chatrooms, err := client.Chatroom.
 		Query().
 		All(ctx)
@@ -30,19 +39,20 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 // GetChatroomByID godoc
 // @Tags	chatroom
 // @Router	/chatroom/{id} [get]
-// @Param	id path int true "id"
+// @Param	uri path controller.GetChatroomByID.Uri true "path"
 func (*Controller) GetChatroomByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read id",
-		})
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
 		return
 	}
 
 	chatroom, err := client.Chatroom.
 		Query().
-		Where(chatroom.ID(id)).
+		Where(chatroom.ID(uri.ID)).
 		Only(ctx)
 
 	if err != nil {
@@ -58,16 +68,14 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 // CreateChatroom godoc
 // @Tags	chatroom
 // @Router	/chatroom [post]
-// @Param	name body string true "name"
+// @Param	body body controller.CreateChatroom.Body true "body"
 func (*Controller) CreateChatroom(c *gin.Context) {
-	var body struct {
-		Name string
+	type Body struct {
+		Name string `binding:"required"`
 	}
 
+	var body Body
 	if err := c.Bind(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read body",
-		})
 		return
 	}
 
@@ -82,36 +90,35 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, chatroom)
+	c.JSON(http.StatusCreated, chatroom)
 }
 
 // UpdateChatroom godoc
 // @Tags	chatroom
 // @Router	/chatroom/{id} [patch]
-// @Param	id path int true "id"
-// @Param	name body string true "name"
+// @Param	uri path controller.UpdateChatroom.Uri true "uri"
+// @Param	body body controller.UpdateChatroom.Body true "body"
 func (*Controller) UpdateChatroom(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read id",
-		})
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
 		return
 	}
 
-	var body struct {
-		Name string
+	type Body struct {
+		Name string `binding:"required"`
 	}
 
+	var body Body
 	if err := c.Bind(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read body",
-		})
 		return
 	}
 
 	chatroom, err := client.Chatroom.
-		UpdateOneID(id).
+		UpdateOneID(uri.ID).
 		SetName(body.Name).
 		Save(ctx)
 	if err != nil {
@@ -127,18 +134,19 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 // DeleteChatroom godoc
 // @Tags	chatroom
 // @Router	/chatroom/{id} [delete]
-// @Param	id path int true "id"
+// @Param	uri path controller.DeleteChatroom.Uri true "uri"
 func (*Controller) DeleteChatroom(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read id",
-		})
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
 		return
 	}
 
-	err = client.Chatroom.
-		DeleteOneID(id).
+	err := client.Chatroom.
+		DeleteOneID(uri.ID).
 		Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{

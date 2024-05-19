@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 
 	"disgord/ent/user"
@@ -10,27 +9,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Auth struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 // SignIn godoc
 // @Tags	auth
 // @Router	/auth/sign-in [post]
-// @Param	auth body controller.Auth true "auth"
+// @Param	body body controller.SignIn.Body true "body"
 func (*Controller) SignIn(c *gin.Context) {
-	var auth Auth
-	if err := c.Bind(&auth); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read body",
-		})
+	type Body struct {
+		Username string `binding:"required"`
+		Password string `binding:"required"`
+	}
+
+	var body Body
+	if err := c.Bind(&body); err != nil {
 		return
 	}
 
 	user, err := client.User.
 		Query().
-		Where(user.Username(auth.Username)).
+		Where(user.Username(body.Username)).
 		Only(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -39,7 +35,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(auth.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid username or password",
@@ -55,16 +51,15 @@ func (*Controller) SignIn(c *gin.Context) {
 // SignUp godoc
 // @Tags	auth
 // @Router	/auth/sign-up [post]
+// @Param	body body controller.SignUp.Body true "body"
 func (*Controller) SignUp(c *gin.Context) {
-	var body struct {
-		Username string
-		Password string
+	type Body struct {
+		Username string `binding:"required"`
+		Password string `binding:"required"`
 	}
 
+	var body Body
 	if err := c.Bind(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "failed to read body",
-		})
 		return
 	}
 
@@ -97,7 +92,6 @@ func (*Controller) SignUp(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "failed to create user",
 		})
-		log.Print(err)
 		return
 	}
 
