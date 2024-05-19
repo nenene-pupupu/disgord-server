@@ -2,34 +2,24 @@
 
 ## How to Run
 1. check if `go` is installed
-```
-go version
-```
+    ```
+    go version
+    ```
 
-2. download dependencies and generate codes
-```
-go get ./...
-go generate ./...
-go mod tidy
-```
+1. execute shell script `init.sh`, which will create dummy data for test.
+    ```
+    chmod +x init.sh
+    ./init.sh
+    ```
 
-3. create `.env` file and set `SECRET`
-```
-cp example.env .env
+1. run server
+    ```
+    go build && ./disgord
 
-# or generate random string
-echo "SECRET=$(openssl rand -hex 8)" > .env
-```
+    # or
+    go run main.go
+    ```
 
-4. run server
-```
-go build
-./disgord
+1. access through `localhost:8080`
 
-# or
-go run main.go
-```
-
-5. access through `localhost:8080`
-
-6. check APIs at `/swagger/index.html`
+1. check APIs at `/swagger/index.html`
