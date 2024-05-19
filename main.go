@@ -66,9 +66,6 @@ func main() {
 	ws := r.Group("/ws")
 	{
 		ws.GET("", c.GetWebsocket)
-		// ws.GET("/:chatroomID", func(ctx *gin.Context) {})
-		// ws.GET("/:chatroomID/voice", func(ctx *gin.Context) {})
-		// ws.GET("/:chatroomID/video", func(ctx *gin.Context) {})
 		go c.HandleBroadcast()
 	}
 
