@@ -1,0 +1,8 @@
+[build]
+cmd = "go build"
+bin = "disgord"
+include_ext = ["go"]
+exclude_dir = ["ent", "docs"]
+
+[misc]
+clean_on_exit = true
