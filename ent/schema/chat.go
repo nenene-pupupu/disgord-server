@@ -16,11 +16,15 @@ type Chat struct {
 // Fields of the Chat.
 func (Chat) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("chatroom_id"),
+
+		field.Int("sender_id"),
+
 		field.String("content"),
 
 		field.Time("created_at").
-			Optional().
-			Default(time.Now),
+			Default(time.Now).
+			Immutable(),
 	}
 }
 
@@ -29,10 +33,14 @@ func (Chat) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("chatroom", Chatroom.Type).
 			Ref("chats").
-			Unique(),
+			Field("chatroom_id").
+			Unique().
+			Required(),
 
 		edge.From("sender", User.Type).
 			Ref("chats").
-			Unique(),
+			Field("sender_id").
+			Unique().
+			Required(),
 	}
 }

@@ -9,8 +9,9 @@ import (
 )
 
 type Message struct {
-	SenderID int    `json:"senderID"`
-	Content  string `json:"content"`
+	ChatroomID int    `json:"chatroomId"`
+	SenderID   int    `json:"senderId"`
+	Content    string `json:"content"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -63,6 +64,7 @@ func (*Controller) GetWebsocket(c *gin.Context) {
 
 		_, err := client.Chat.
 			Create().
+			SetChatroomID(msg.ChatroomID).
 			SetSenderID(msg.SenderID).
 			SetContent(msg.Content).
 			Save(ctx)
