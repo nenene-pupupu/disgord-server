@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"disgord/ent/auth"
 	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
@@ -24,9 +25,11 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	user, err := client.User.
+	auth, err := client.Auth.
 		Query().
-		Where(user.Username(body.Username)).
+		Where(auth.HasUserWith(
+			user.Username(body.Username),
+		)).
 		Only(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -35,7 +38,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid username or password",
@@ -82,10 +85,18 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	user, err := client.User.
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to create transaction",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	user, err := tx.User.
 		Create().
 		SetUsername(body.Username).
-		SetPassword(string(hash)).
 		SetDisplayName(body.Username).
 		Save(ctx)
 	if err != nil {
@@ -95,7 +106,24 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"name": user.Username,
-	})
+	_, err = tx.Auth.
+		Create().
+		SetUser(user).
+		SetPassword(string(hash)).
+		Save(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to create auth",
+		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to commit transaction",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
 }

@@ -19,8 +19,6 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			Unique(),
 
-		field.String("password"),
-
 		field.String("display_name"),
 
 		field.Time("created_at").
@@ -35,6 +33,9 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("auth", Auth.Type).
+			Unique(),
+
 		edge.To("chatrooms", Chatroom.Type),
 
 		edge.To("chats", Chat.Type),
