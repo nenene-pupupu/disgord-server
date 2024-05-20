@@ -66,7 +66,6 @@ func main() {
 	ws := r.Group("/ws")
 	{
 		ws.GET("", c.GetWebsocket)
-		go c.HandleBroadcast()
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
