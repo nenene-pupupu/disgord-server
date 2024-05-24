@@ -18,6 +18,13 @@ var upgrader = websocket.Upgrader{
 }
 
 func (*Controller) GetWebsocket(c *gin.Context) {
+	if c.Request.URL.Scheme != "ws" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid scheme",
+		})
+		return
+	}
+
 	userID, ok := jwt.GetCurrentUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
