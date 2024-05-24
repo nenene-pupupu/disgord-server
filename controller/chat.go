@@ -12,8 +12,8 @@ import (
 // @Param	q query controller.GetAllChats.Query true "query"
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
-		ChatroomID int `form:"chatroomID"`
-		UserID     int `form:"userID"`
+		ChatroomID int `form:"chatroomId"`
+		UserID     int `form:"userId"`
 	}
 
 	var query Query
