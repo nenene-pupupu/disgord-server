@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
 	"disgord/ent/auth"
@@ -49,9 +50,8 @@ func (*Controller) SignIn(c *gin.Context) {
 
 	tokenString, err := jwt.IssueToken(auth.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to issue token",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -88,17 +88,15 @@ func (*Controller) SignUp(c *gin.Context) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to hash password",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
 	tx, err := client.Tx(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to create transaction",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	defer tx.Rollback()
@@ -109,9 +107,8 @@ func (*Controller) SignUp(c *gin.Context) {
 		SetDisplayName(body.Username).
 		Save(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to create user",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -121,16 +118,14 @@ func (*Controller) SignUp(c *gin.Context) {
 		SetPassword(string(hash)).
 		Save(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to create auth",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to commit transaction",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 

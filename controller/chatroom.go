@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
 	"disgord/ent/chatroom"
@@ -25,11 +26,9 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 	chatrooms, err := client.Chatroom.
 		Query().
 		All(ctx)
-
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -84,9 +83,8 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		SetName(body.Name).
 		Save(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -122,8 +120,8 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		SetName(body.Name).
 		Save(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chatroom",
 		})
 		return
 	}
@@ -155,5 +153,5 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{})
+	c.Status(http.StatusNoContent)
 }

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
 	"disgord/ent/chat"
@@ -33,9 +34,8 @@ func (*Controller) GetAllChats(c *gin.Context) {
 
 	chats, err := chatQuery.All(ctx)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "cannot find chats",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
