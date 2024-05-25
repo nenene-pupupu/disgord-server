@@ -67,3 +67,30 @@ func (*Controller) GetUserByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users[0])
 }
+
+// DeleteUser godoc
+// @Tags	user
+// @Router	/user/{id} [delete]
+// @Param	uri path controller.DeleteUser.Uri true "path"
+func (*Controller) DeleteUser(c *gin.Context) {
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
+		return
+	}
+
+	err := client.User.
+		DeleteOneID(uri.ID).
+		Exec(ctx)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "user not found",
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

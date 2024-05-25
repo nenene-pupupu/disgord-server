@@ -47,6 +47,7 @@ func main() {
 	{
 		user.GET("", c.GetAllUsers)
 		user.GET("/:id", c.GetUserByID)
+		user.DELETE("/:id", c.DeleteUser)
 	}
 
 	chatroom := r.Group("/chatroom")
