@@ -61,6 +61,7 @@ func main() {
 	chat := r.Group("/chat")
 	{
 		chat.GET("", c.GetAllChats)
+		chat.GET("/:id", c.GetChatByID)
 	}
 
 	ws := r.Group("/ws")

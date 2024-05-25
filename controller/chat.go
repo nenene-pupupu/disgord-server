@@ -34,3 +34,28 @@ func (*Controller) GetAllChats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, chats)
 }
+
+// GetChatByID godoc
+// @Tags	chat
+// @Router	/chat/{id} [get]
+// @Param	uri path controller.GetChatByID.Uri true "path"
+func (*Controller) GetChatByID(c *gin.Context) {
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
+		return
+	}
+
+	chat, err := client.Chat.Get(ctx, uri.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chat",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, chat)
+}
