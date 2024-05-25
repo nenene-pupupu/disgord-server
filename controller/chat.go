@@ -3,6 +3,8 @@ package controller
 import (
 	"net/http"
 
+	"disgord/ent/chat"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +15,7 @@ import (
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
 		ChatroomID int `form:"chatroomId"`
-		UserID     int `form:"userId"`
+		SenderID   int `form:"senderId"`
 	}
 
 	var query Query
@@ -21,13 +23,18 @@ func (*Controller) GetAllChats(c *gin.Context) {
 		return
 	}
 
-	chats, err := client.Chat.
-		Query().
-		All(ctx)
+	chatQuery := client.Chat.Query()
+	if query.ChatroomID != 0 {
+		chatQuery = chatQuery.Where(chat.ChatroomID(query.ChatroomID))
+	}
+	if query.SenderID != 0 {
+		chatQuery = chatQuery.Where(chat.SenderID(query.SenderID))
+	}
 
+	chats, err := chatQuery.All(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chats",
 		})
 		return
 	}
