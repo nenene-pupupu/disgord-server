@@ -17,7 +17,10 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func (*Controller) GetWebsocket(c *gin.Context) {
+// ConnectWebsocket godoc
+// @Tags	websocket
+// @Router	/ws [get]
+func (*Controller) ConnectWebsocket(c *gin.Context) {
 	if c.Request.URL.Scheme != "ws" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "invalid scheme",
