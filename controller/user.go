@@ -1,34 +1,22 @@
 package controller
 
 import (
+	"log"
 	"net/http"
-
-	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
-
-type UserDao struct {
-	ID          int    `json:"id"`
-	Username    string `json:"username"`
-	DisplayName string `json:"display_name"`
-}
 
 // GetAllUsers godoc
 // @Tags	user
 // @Router	/user [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
-	var users []UserDao
-	err := client.User.Query().
-		Select(user.FieldID).
-		Select(user.FieldUsername).
-		Select(user.FieldDisplayName).
-		Scan(ctx, &users)
-
+	users, err := client.User.
+		Query().
+		All(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -49,15 +37,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	var users []UserDao
-	err := client.User.
-		Query().
-		Where(user.ID(uri.ID)).
-		Select(user.FieldID).
-		Select(user.FieldUsername).
-		Select(user.FieldDisplayName).
-		Scan(ctx, &users)
-
+	user, err := client.User.Get(ctx, uri.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find user",
@@ -65,7 +45,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, users[0])
+	c.JSON(http.StatusOK, user)
 }
 
 // DeleteUser godoc
