@@ -21,6 +21,8 @@ func (Chatroom) Fields() []ent.Field {
 		field.String("password").
 			Optional(),
 
+		field.Int("owner_id"),
+
 		field.Time("created_at").
 			Default(time.Now()),
 	}
@@ -30,10 +32,10 @@ func (Chatroom) Fields() []ent.Field {
 func (Chatroom) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("owner", User.Type).
-			Unique(),
+			Field("owner_id").
+			Unique().
+			Required(),
 
 		edge.To("chats", Chat.Type),
-
-		// edge.To("members", User.Type),
 	}
 }

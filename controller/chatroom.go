@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"disgord/ent/chatroom"
+	"disgord/jwt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +16,7 @@ import (
 // @Param	q query controller.GetAllChatrooms.Query true "query"
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
-		UserID int `form:"userId" binding:"omitempty"`
+		OwnerID int `form:"ownerId" binding:"omitempty"`
 	}
 
 	var query Query
@@ -23,9 +24,12 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 		return
 	}
 
-	chatrooms, err := client.Chatroom.
-		Query().
-		All(ctx)
+	chatroomQuery := client.Chatroom.Query()
+	if query.OwnerID != 0 {
+		chatroomQuery = chatroomQuery.Where(chatroom.OwnerID(query.OwnerID))
+	}
+
+	chatrooms, err := chatroomQuery.All(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
@@ -53,7 +57,6 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 		Query().
 		Where(chatroom.ID(uri.ID)).
 		Only(ctx)
-
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find chatroom",
@@ -70,7 +73,8 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 // @Param	body body controller.CreateChatroom.Body true "body"
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
-		Name string `binding:"required"`
+		Name     string `binding:"required"`
+		Password string `binding:"omitempty"`
 	}
 
 	var body Body
@@ -78,10 +82,23 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		return
 	}
 
-	chatroom, err := client.Chatroom.
+	userID, ok := jwt.GetCurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	chatroomCreate := client.Chatroom.
 		Create().
 		SetName(body.Name).
-		Save(ctx)
+		SetOwnerID(userID)
+	if body.Password != "" {
+		chatroomCreate.SetPassword(body.Password)
+	}
+
+	chatroom, err := chatroomCreate.Save(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
