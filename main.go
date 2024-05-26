@@ -13,7 +13,6 @@ import (
 
 	"entgo.io/ent/dialect"
 	"github.com/gin-gonic/gin"
-	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
