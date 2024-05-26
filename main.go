@@ -12,6 +12,7 @@ import (
 	"disgord/jwt"
 
 	"entgo.io/ent/dialect"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 	swaggerFiles "github.com/swaggo/files"
@@ -34,6 +35,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.Default())
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	c := controller.NewController(ctx, client)
