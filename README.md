@@ -23,3 +23,5 @@
 1. access through `localhost:8080`
 
 1. check APIs at `/swagger/index.html`
+
+1. after each git pull, run `go generate ./...`
