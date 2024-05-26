@@ -172,6 +172,7 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	204
+//	@Failure	401	"chatroom owner only"
 //	@Failure	404	"cannot find chatroom"
 //	@Router		/chatroom/{id} [delete]
 func (*Controller) DeleteChatroom(c *gin.Context) {
@@ -184,13 +185,50 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 		return
 	}
 
-	err := client.Chatroom.
+	userID, ok := jwt.GetCurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	chatroom, err := tx.Chatroom.Get(ctx, uri.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chatroom",
+		})
+		return
+	}
+
+	if chatroom.OwnerID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "chatroom owner only",
+		})
+		return
+	}
+
+	err = tx.Chatroom.
 		DeleteOneID(uri.ID).
 		Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find chatroom",
 		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
