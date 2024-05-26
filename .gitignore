@@ -1,5 +1,6 @@
 ent/*
 !ent/generate.go
+!ent/entc.go
 !ent/schema/
 
 docs/
