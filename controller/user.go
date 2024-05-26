@@ -13,6 +13,7 @@ import (
 //	@Param		Authorization	header	string	true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.User
+//	@Failure	401	"unauthorized"
 //	@Router		/user [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
 	users, err := client.User.
@@ -34,6 +35,7 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
+//	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find user"
 //	@Router		/user/{id} [get]
 func (*Controller) GetUserByID(c *gin.Context) {
@@ -64,6 +66,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	204
+//	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find user"
 //	@Router		/user/{id} [delete]
 func (*Controller) DeleteUser(c *gin.Context) {

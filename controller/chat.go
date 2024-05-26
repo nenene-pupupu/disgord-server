@@ -16,6 +16,7 @@ import (
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.Chat
+//	@Failure	401	"unauthorized"
 //	@Router		/chat [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
@@ -53,6 +54,7 @@ func (*Controller) GetAllChats(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chat
+//	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find chat"
 //	@Router		/chat/{id} [get]
 func (*Controller) GetChatByID(c *gin.Context) {
