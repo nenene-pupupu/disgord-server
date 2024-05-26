@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -31,11 +32,13 @@ func (Chatroom) Fields() []ent.Field {
 // Edges of the Chatroom.
 func (Chatroom) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("owner", User.Type).
+		edge.From("owner", User.Type).
+			Ref("chatrooms").
 			Field("owner_id").
 			Unique().
 			Required(),
 
-		edge.To("chats", Chat.Type),
+		edge.To("chats", Chat.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

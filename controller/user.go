@@ -4,7 +4,12 @@ import (
 	"log"
 	"net/http"
 
+	"disgord/ent/auth"
+	"disgord/ent/user"
+	"disgord/jwt"
+
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // GetAllUsers godoc
@@ -64,9 +69,11 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Tags		user
 //	@Param		uri				path	controller.DeleteUser.Uri	true	"path"
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
+//	@Param		body			body	controller.DeleteUser.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"unauthorized"
+//	@Failure	401	"invalid password"
+//	@Failure	403	"user can only cancel account itself"
 //	@Failure	404	"cannot find user"
 //	@Router		/user/{id} [delete]
 func (*Controller) DeleteUser(c *gin.Context) {
@@ -79,13 +86,70 @@ func (*Controller) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err := client.User.
+	type Body struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	var body Body
+	if err := c.Bind(&body); err != nil {
+		return
+	}
+
+	userID, ok := jwt.GetCurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	if userID != uri.ID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "user can only cancel account itself",
+		})
+		return
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	auth, err := tx.Auth.
+		Query().
+		Where(auth.HasUserWith(user.ID(uri.ID))).
+		Only(ctx)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(body.Password))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "invalid password",
+		})
+		return
+	}
+
+	err = tx.User.
 		DeleteOneID(uri.ID).
 		Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find user",
 		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 

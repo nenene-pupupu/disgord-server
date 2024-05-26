@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -34,10 +35,13 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("auth", Auth.Type).
-			Unique(),
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 
-		edge.To("chatrooms", Chatroom.Type),
+		edge.To("chatrooms", Chatroom.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 
-		edge.To("chats", Chat.Type),
+		edge.To("chats", Chat.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
