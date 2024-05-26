@@ -9,6 +9,7 @@ import (
 	"disgord/controller"
 	_ "disgord/docs"
 	"disgord/ent"
+	"disgord/jwt"
 
 	"entgo.io/ent/dialect"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	c := controller.NewController(ctx, client)
 
@@ -42,6 +44,8 @@ func main() {
 		auth.POST("/sign-in", c.SignIn)
 		auth.POST("/sign-up", c.SignUp)
 	}
+
+	r.Use(jwt.JWTAuthMiddleware())
 
 	user := r.Group("/user")
 	{
@@ -70,6 +74,5 @@ func main() {
 		ws.GET("", c.ConnectWebsocket)
 	}
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Run()
 }
