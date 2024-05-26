@@ -59,7 +59,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		)
 		if err != nil || token == nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "Unauthorized",
+				"message": "unauthorized",
 			})
 			c.Abort()
 			return

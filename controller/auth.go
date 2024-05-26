@@ -12,10 +12,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Token struct {
+	AccessToken string `json:"accessToken"`
+}
+
 // SignIn godoc
-// @Tags	auth
-// @Router	/auth/sign-in [post]
-// @Param	body body controller.SignIn.Body true "body"
+//
+//	@Description	Sign in and receive an access token.
+//	@Description	Set "Authorization" header with the "Bearer ${accessToken}" to authenticate requests.
+//	@Tags			auth
+//	@Param			body	body		controller.SignIn.Body	true	"Request body"
+//	@Success		200		{object}	controller.Token
+//	@Failure		401		"invalid username or password"
+//	@Failure		404		"user not found"
+//	@Router			/auth/sign-in [post]
 func (*Controller) SignIn(c *gin.Context) {
 	type Body struct {
 		Username string `binding:"required"`
@@ -55,15 +65,18 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"accessToken": tokenString,
+	c.JSON(http.StatusOK, Token{
+		AccessToken: tokenString,
 	})
 }
 
 // SignUp godoc
-// @Tags	auth
-// @Router	/auth/sign-up [post]
-// @Param	body body controller.SignUp.Body true "body"
+//
+//	@Tags		auth
+//	@Param		body	body		controller.SignUp.Body	true	"Request body"
+//	@Success	201		{object}	ent.User
+//	@Failure	409		"username already exists"
+//	@Router		/auth/sign-up [post]
 func (*Controller) SignUp(c *gin.Context) {
 	type Body struct {
 		Username string `binding:"required"`

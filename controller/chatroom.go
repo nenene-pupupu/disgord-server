@@ -11,9 +11,13 @@ import (
 )
 
 // GetAllChatrooms godoc
-// @Tags	chatroom
-// @Router	/chatroom [get]
-// @Param	q query controller.GetAllChatrooms.Query true "query"
+//
+//	@Tags		chatroom
+//	@Param		q				query	controller.GetAllChatrooms.Query	true	"query"
+//	@Param		Authorization	header	string								true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{array}	ent.Chatroom
+//	@Router		/chatroom [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
 		OwnerID int `form:"ownerId" binding:"omitempty"`
@@ -40,9 +44,14 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 }
 
 // GetChatroomByID godoc
-// @Tags	chatroom
-// @Router	/chatroom/{id} [get]
-// @Param	uri path controller.GetChatroomByID.Uri true "path"
+//
+//	@Tags		chatroom
+//	@Param		uri				path	controller.GetChatroomByID.Uri	true	"path"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.Chatroom
+//	@Failure	404	"cannot find chatroom"
+//	@Router		/chatroom/{id} [get]
 func (*Controller) GetChatroomByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -68,9 +77,14 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 }
 
 // CreateChatroom godoc
-// @Tags	chatroom
-// @Router	/chatroom [post]
-// @Param	body body controller.CreateChatroom.Body true "body"
+//
+//	@Tags		chatroom
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Param		body			body	controller.CreateChatroom.Body	true	"Request body"
+//	@Security	BearerAuth
+//	@Success	201	{object}	ent.Chatroom
+//	@Failure	401	"unauthorized"
+//	@Router		/chatroom [post]
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
 		Name     string `binding:"required"`
@@ -85,7 +99,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 	userID, ok := jwt.GetCurrentUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Unauthorized",
+			"message": "unauthorized",
 		})
 		return
 	}
@@ -109,10 +123,15 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 }
 
 // UpdateChatroom godoc
-// @Tags	chatroom
-// @Router	/chatroom/{id} [patch]
-// @Param	uri path controller.UpdateChatroom.Uri true "uri"
-// @Param	body body controller.UpdateChatroom.Body true "body"
+//
+//	@Tags		chatroom
+//	@Param		uri				path	controller.UpdateChatroom.Uri	true	"uri"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Param		body			body	controller.UpdateChatroom.Body	true	"Request body"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.Chatroom
+//	@Failure	404	"cannot find chatroom"
+//	@Router		/chatroom/{id} [patch]
 func (*Controller) UpdateChatroom(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -147,9 +166,14 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 }
 
 // DeleteChatroom godoc
-// @Tags	chatroom
-// @Router	/chatroom/{id} [delete]
-// @Param	uri path controller.DeleteChatroom.Uri true "uri"
+//
+//	@Tags		chatroom
+//	@Param		uri				path	controller.DeleteChatroom.Uri	true	"uri"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	204
+//	@Failure	404	"cannot find chatroom"
+//	@Router		/chatroom/{id} [delete]
 func (*Controller) DeleteChatroom(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`

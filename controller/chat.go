@@ -10,9 +10,13 @@ import (
 )
 
 // GetAllChats godoc
-// @Tags	chat
-// @Router	/chat [get]
-// @Param	q query controller.GetAllChats.Query true "query"
+//
+//	@Tags		chat
+//	@Param		q				query	controller.GetAllChats.Query	true	"query"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{array}	ent.Chat
+//	@Router		/chat [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
 		ChatroomID int `form:"chatroomId"`
@@ -43,9 +47,14 @@ func (*Controller) GetAllChats(c *gin.Context) {
 }
 
 // GetChatByID godoc
-// @Tags	chat
-// @Router	/chat/{id} [get]
-// @Param	uri path controller.GetChatByID.Uri true "path"
+//
+//	@Tags		chat
+//	@Param		uri				path	controller.GetChatByID.Uri	true	"path"
+//	@Param		Authorization	header	string						true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.Chat
+//	@Failure	404	"cannot find chat"
+//	@Router		/chat/{id} [get]
 func (*Controller) GetChatByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`

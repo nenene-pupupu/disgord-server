@@ -8,8 +8,12 @@ import (
 )
 
 // GetAllUsers godoc
-// @Tags	user
-// @Router	/user [get]
+//
+//	@Tags		user
+//	@Param		Authorization	header	string	true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{array}	ent.User
+//	@Router		/user [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
 	users, err := client.User.
 		Query().
@@ -24,9 +28,14 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 }
 
 // GetUserByID godoc
-// @Tags	user
-// @Router	/user/{id} [get]
-// @Param	uri path controller.GetUserByID.Uri true "path"
+//
+//	@Tags		user
+//	@Param		uri				path	controller.GetUserByID.Uri	true	"path"
+//	@Param		Authorization	header	string						true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.User
+//	@Failure	404	"cannot find user"
+//	@Router		/user/{id} [get]
 func (*Controller) GetUserByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -49,9 +58,14 @@ func (*Controller) GetUserByID(c *gin.Context) {
 }
 
 // DeleteUser godoc
-// @Tags	user
-// @Router	/user/{id} [delete]
-// @Param	uri path controller.DeleteUser.Uri true "path"
+//
+//	@Tags		user
+//	@Param		uri				path	controller.DeleteUser.Uri	true	"path"
+//	@Param		Authorization	header	string						true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	204
+//	@Failure	404	"cannot find user"
+//	@Router		/user/{id} [delete]
 func (*Controller) DeleteUser(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -67,7 +81,7 @@ func (*Controller) DeleteUser(c *gin.Context) {
 		Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"message": "user not found",
+			"message": "cannot find user",
 		})
 		return
 	}
