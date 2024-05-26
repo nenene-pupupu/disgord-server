@@ -172,7 +172,8 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"chatroom owner only"
+//	@Failure	401	"unauthorized"
+//	@Failure	403	"chatroom owner only"
 //	@Failure	404	"cannot find chatroom"
 //	@Router		/chatroom/{id} [delete]
 func (*Controller) DeleteChatroom(c *gin.Context) {
@@ -210,7 +211,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 	}
 
 	if chatroom.OwnerID != userID {
-		c.JSON(http.StatusUnauthorized, gin.H{
+		c.JSON(http.StatusForbidden, gin.H{
 			"message": "chatroom owner only",
 		})
 		return
