@@ -26,16 +26,14 @@ var newline = []byte{'\n'}
 
 type Client struct {
 	id   int
-	name string
 	conn *websocket.Conn
 	send chan []byte
 	room *Room
 }
 
-func NewClient(id int, name string, conn *websocket.Conn) *Client {
+func NewClient(id int, conn *websocket.Conn) *Client {
 	client := &Client{
 		id:   id,
-		name: name,
 		conn: conn,
 		send: make(chan []byte, 256),
 	}

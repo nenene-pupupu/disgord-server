@@ -36,21 +36,13 @@ func (*Controller) ConnectWebsocket(c *gin.Context) {
 		return
 	}
 
-	user, err := client.User.Get(ctx, userID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "user not found",
-		})
-		return
-	}
-
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	client := ws.NewClient(userID, user.DisplayName, conn)
+	client := ws.NewClient(userID, conn)
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
