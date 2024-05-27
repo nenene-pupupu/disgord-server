@@ -1,14 +1,20 @@
 package controller
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"disgord/ent/auth"
 	"disgord/ent/user"
-	"disgord/jwt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5/request"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -58,7 +64,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	tokenString, err := jwt.IssueToken(auth.UserID)
+	tokenString, err := issueToken(auth.UserID)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
@@ -145,4 +151,65 @@ func (*Controller) SignUp(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, user)
+}
+
+type Claims struct {
+	UserID int `json:"userId"`
+	jwt.RegisteredClaims
+}
+
+func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, err := request.ParseFromRequest(
+			c.Request,
+			request.AuthorizationHeaderExtractor,
+			func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+
+				return key.Public(), nil
+			},
+			request.WithClaims(&Claims{}),
+		)
+		if err != nil || token == nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("userID", token.Claims.(*Claims).UserID)
+		c.Next()
+	}
+}
+
+var key *ecdsa.PrivateKey
+
+func init() {
+	var err error
+
+	key, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func issueToken(userID int) (string, error) {
+	claims := Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	return token.SignedString(key)
+}
+
+func getCurrentUserID(c *gin.Context) int {
+	userID, _ := c.Get("userID")
+	return userID.(int)
 }

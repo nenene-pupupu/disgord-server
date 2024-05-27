@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"disgord/jwt"
 	ws "disgord/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +43,7 @@ func (*Controller) ConnectWebsocket(c *gin.Context) {
 		return
 	}
 
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

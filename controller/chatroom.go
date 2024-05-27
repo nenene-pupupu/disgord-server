@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"disgord/ent/chatroom"
-	"disgord/jwt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -101,7 +100,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		return
 	}
 
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	chatroomCreate := client.Chatroom.
 		Create().
@@ -188,7 +187,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 		return
 	}
 
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	tx, err := client.Tx(ctx)
 	if err != nil {

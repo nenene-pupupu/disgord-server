@@ -6,7 +6,6 @@ import (
 
 	"disgord/ent/auth"
 	"disgord/ent/user"
-	"disgord/jwt"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -77,7 +76,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Failure	404	"cannot find user"
 //	@Router		/users/me [get]
 func (*Controller) GetMyProfile(c *gin.Context) {
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	user, err := client.User.Get(ctx, userID)
 	if err != nil {
@@ -112,7 +111,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	tx, err := client.Tx(ctx)
 	if err != nil {
@@ -192,7 +191,7 @@ func (*Controller) CancelAccount(c *gin.Context) {
 		return
 	}
 
-	userID := jwt.GetCurrentUserID(c)
+	userID := getCurrentUserID(c)
 
 	tx, err := client.Tx(ctx)
 	if err != nil {
