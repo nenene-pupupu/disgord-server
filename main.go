@@ -59,6 +59,7 @@ func main() {
 		user.GET("", c.GetAllUsers)
 		user.GET("/:id", c.GetUserByID)
 		user.GET("/me", c.GetMyProfile)
+		user.PATCH("/:id", c.UpdateUser)
 		user.DELETE("/:id", c.DeleteUser)
 	}
 
