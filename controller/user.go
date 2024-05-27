@@ -87,28 +87,17 @@ func (*Controller) GetMyProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateUser godoc
+// UpdateMyProfile godoc
 //
 //	@Tags		user
-//	@Param		uri				path	controller.UpdateUser.Uri	true	"path"
-//	@Param		Authorization	header	string						true	"Bearer AccessToken"
-//	@Param		body			body	controller.UpdateUser.Body	true	"Request body"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Param		body			body	controller.UpdateMyProfile.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
 //	@Failure	401	"unauthorized"
-//	@Failure	403	"user can only update itself"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/{id} [patch]
-func (*Controller) UpdateUser(c *gin.Context) {
-	type Uri struct {
-		ID int `uri:"id" binding:"required"`
-	}
-
-	var uri Uri
-	if err := c.BindUri(&uri); err != nil {
-		return
-	}
-
+//	@Router		/user/me [patch]
+func (*Controller) UpdateMyProfile(c *gin.Context) {
 	type Body struct {
 		Password    string `json:"password"`
 		DisplayName string `json:"displayName"`
@@ -121,13 +110,6 @@ func (*Controller) UpdateUser(c *gin.Context) {
 
 	userID := jwt.GetCurrentUserID(c)
 
-	if userID != uri.ID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "user can only update itself",
-		})
-		return
-	}
-
 	tx, err := client.Tx(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -135,14 +117,6 @@ func (*Controller) UpdateUser(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback()
-
-	_, err = tx.User.Get(ctx, uri.ID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "cannot find user",
-		})
-		return
-	}
 
 	if body.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
@@ -154,7 +128,7 @@ func (*Controller) UpdateUser(c *gin.Context) {
 
 		_, err = tx.Auth.
 			Update().
-			Where(auth.HasUserWith(user.ID(uri.ID))).
+			Where(auth.HasUserWith(user.ID(userID))).
 			SetPassword(string(hash)).
 			Save(ctx)
 		if err != nil {
@@ -166,7 +140,7 @@ func (*Controller) UpdateUser(c *gin.Context) {
 
 	if body.DisplayName != "" {
 		_, err := tx.User.
-			UpdateOneID(uri.ID).
+			UpdateOneID(userID).
 			SetDisplayName(body.DisplayName).
 			Save(ctx)
 		if err != nil {
@@ -176,7 +150,7 @@ func (*Controller) UpdateUser(c *gin.Context) {
 		}
 	}
 
-	user, err := tx.User.Get(ctx, uri.ID)
+	user, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find user",
@@ -193,28 +167,17 @@ func (*Controller) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// DeleteUser godoc
+// CancelAccount godoc
 //
 //	@Tags		user
-//	@Param		uri				path	controller.DeleteUser.Uri	true	"path"
-//	@Param		Authorization	header	string						true	"Bearer AccessToken"
-//	@Param		body			body	controller.DeleteUser.Body	true	"Request body"
+//	@Param		Authorization	header	string							true	"Bearer AccessToken"
+//	@Param		body			body	controller.CancelAccount.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	204
 //	@Failure	401	"invalid password"
-//	@Failure	403	"user can only cancel account itself"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/{id} [delete]
-func (*Controller) DeleteUser(c *gin.Context) {
-	type Uri struct {
-		ID int `uri:"id" binding:"required"`
-	}
-
-	var uri Uri
-	if err := c.BindUri(&uri); err != nil {
-		return
-	}
-
+//	@Router		/user/me [delete]
+func (*Controller) CancelAccount(c *gin.Context) {
 	type Body struct {
 		Password string `json:"password" binding:"required"`
 	}
@@ -226,13 +189,6 @@ func (*Controller) DeleteUser(c *gin.Context) {
 
 	userID := jwt.GetCurrentUserID(c)
 
-	if userID != uri.ID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "user can only cancel account itself",
-		})
-		return
-	}
-
 	tx, err := client.Tx(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -243,7 +199,7 @@ func (*Controller) DeleteUser(c *gin.Context) {
 
 	auth, err := tx.Auth.
 		Query().
-		Where(auth.HasUserWith(user.ID(uri.ID))).
+		Where(auth.HasUserWith(user.ID(userID))).
 		Only(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -261,7 +217,7 @@ func (*Controller) DeleteUser(c *gin.Context) {
 	}
 
 	err = tx.User.
-		DeleteOneID(uri.ID).
+		DeleteOneID(userID).
 		Exec(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
