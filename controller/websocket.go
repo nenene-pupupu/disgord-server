@@ -235,6 +235,15 @@ func newClient(id int, conn *websocket.Conn) *Client {
 	return client
 }
 
+func saveChat(message Message) {
+	client.Chat.
+		Create().
+		SetChatroomID(message.ChatroomID).
+		SetSenderID(message.SenderID).
+		SetContent(message.Content).
+		Save(ctx)
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -282,6 +291,10 @@ func (client *Client) readPump() {
 				client.room.unregister <- client
 				client.room = nil
 			}
+
+		case SendTextAction:
+			saveChat(message)
+			fallthrough
 
 		default:
 			if client.room != nil {
