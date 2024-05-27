@@ -228,5 +228,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 		return
 	}
 
+	kickAllClientsFromRoom(uri.ID)
+
 	c.Status(http.StatusNoContent)
 }

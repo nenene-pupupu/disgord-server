@@ -20,7 +20,7 @@ var upgrader = websocket.Upgrader{
 //
 //	@Description	Use the ws:// scheme instead of the http:// scheme to establish a WebSocket connection.
 //	@Description	Send and receive messages in JSON format, containing 3 required fields: chatroomId, senderId, and action, and 1 optional field: content.
-//	@Description	Actions: [JOIN_ROOM, LEAVE_ROOM, SEND_TEXT, MUTE, UNMUTE, TURN_ON_CAM, TURN_OFF_CAM]
+//	@Description	Actions: [JOIN_ROOM, LEAVE_ROOM, SEND_TEXT, MUTE, UNMUTE, TURN_ON_CAM, TURN_OFF_CAM, KICKED]
 //	@Description	Only SEND_TEXT action requires the content field.
 //	@Description	JOIN_ROOM and LEAVE_ROOM actions let the server know which chatroom the client is in.
 //	@Description	SEND_TEXT action and the other status-related actions will be broadcasted to all clients in the same chatroom.
@@ -159,6 +159,25 @@ func (room *Room) run() {
 	}
 }
 
+func kickAllClientsFromRoom(roomID int) {
+	room, ok := hub.rooms[roomID]
+	if !ok {
+		return
+	}
+
+	for _, client := range room.clients {
+		message, _ := json.Marshal(Message{
+			ChatroomID: roomID,
+			SenderID:   client.id,
+			Action:     KickedAction,
+		})
+		client.send <- message
+
+		room.unregister <- client
+		client.room = nil
+	}
+}
+
 const (
 	JoinRoomAction  = "JOIN_ROOM"
 	LeaveRoomAction = "LEAVE_ROOM"
@@ -170,6 +189,8 @@ const (
 
 	TurnOnCamAction  = "TURN_ON_CAM"
 	TurnOffCamAction = "TURN_OFF_CAM"
+
+	KickedAction = "KICKED"
 )
 
 type Message struct {
