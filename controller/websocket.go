@@ -43,13 +43,7 @@ func (*Controller) ConnectWebsocket(c *gin.Context) {
 		return
 	}
 
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

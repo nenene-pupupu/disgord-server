@@ -74,13 +74,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Failure	404	"cannot find user"
 //	@Router		/user/me [get]
 func (*Controller) GetMyProfile(c *gin.Context) {
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	user, err := client.User.Get(ctx, userID)
 	if err != nil {
@@ -125,13 +119,7 @@ func (*Controller) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	if userID != uri.ID {
 		c.JSON(http.StatusForbidden, gin.H{
@@ -236,13 +224,7 @@ func (*Controller) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	if userID != uri.ID {
 		c.JSON(http.StatusForbidden, gin.H{

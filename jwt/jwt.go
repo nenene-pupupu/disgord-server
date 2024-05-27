@@ -70,7 +70,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func GetCurrentUserID(c *gin.Context) (int, bool) {
-	userID, ok := c.Get("userID")
-	return userID.(int), ok
+func GetCurrentUserID(c *gin.Context) int {
+	userID, _ := c.Get("userID")
+	return userID.(int)
 }

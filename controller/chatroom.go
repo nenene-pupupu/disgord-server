@@ -98,13 +98,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		return
 	}
 
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	chatroomCreate := client.Chatroom.
 		Create().
@@ -189,13 +183,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 		return
 	}
 
-	userID, ok := jwt.GetCurrentUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
-		return
-	}
+	userID := jwt.GetCurrentUserID(c)
 
 	tx, err := client.Tx(ctx)
 	if err != nil {
