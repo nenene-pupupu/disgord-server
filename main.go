@@ -58,6 +58,7 @@ func main() {
 	{
 		user.GET("", c.GetAllUsers)
 		user.GET("/:id", c.GetUserByID)
+		user.GET("/me", c.GetMyProfile)
 		user.DELETE("/:id", c.DeleteUser)
 	}
 

@@ -64,6 +64,35 @@ func (*Controller) GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// GetMyProfile godoc
+//
+//	@Tags		user
+//	@Param		Authorization	header	string	true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.User
+//	@Failure	401	"unauthorized"
+//	@Failure	404	"cannot find user"
+//	@Router		/user/me [get]
+func (*Controller) GetMyProfile(c *gin.Context) {
+	userID, ok := jwt.GetCurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	user, err := client.User.Get(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 // DeleteUser godoc
 //
 //	@Tags		user
