@@ -180,7 +180,18 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", token.Claims.(*Claims).UserID)
+		userID := token.Claims.(*Claims).UserID
+
+		_, err = client.User.Get(ctx, userID)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "not existing user id in token",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("userID", userID)
 		c.Next()
 	}
 }
