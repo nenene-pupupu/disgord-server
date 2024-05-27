@@ -35,7 +35,13 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.Use(cors.Default())
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowWebSockets = true
+	config.AddAllowHeaders("Authorization")
+	r.Use(cors.New(config))
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	c := controller.NewController(ctx, client)
