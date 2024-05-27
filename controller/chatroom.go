@@ -13,6 +13,7 @@ import (
 // GetAllChatrooms godoc
 //
 //	@Tags		chatroom
+//	@Summary	list all chatrooms with the given query
 //	@Param		q				query	controller.GetAllChatrooms.Query	true	"query"
 //	@Param		Authorization	header	string								true	"Bearer AccessToken"
 //	@Security	BearerAuth
@@ -47,6 +48,7 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 // GetChatroomByID godoc
 //
 //	@Tags		chatroom
+//	@Summary	get a single chatroom by id
 //	@Param		uri				path	controller.GetChatroomByID.Uri	true	"path"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
@@ -81,6 +83,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 // CreateChatroom godoc
 //
 //	@Tags		chatroom
+//	@Summary	create a new chatroom
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Param		body			body	controller.CreateChatroom.Body	true	"Request body"
 //	@Security	BearerAuth
@@ -121,6 +124,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 // UpdateChatroom godoc
 //
 //	@Tags		chatroom
+//	@Summary	update the chatroom
 //	@Param		uri				path	controller.UpdateChatroom.Uri	true	"uri"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Param		body			body	controller.UpdateChatroom.Body	true	"Request body"
@@ -165,6 +169,7 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 // DeleteChatroom godoc
 //
 //	@Tags		chatroom
+//	@Summary	delete the chatroom and all chats in it
 //	@Param		uri				path	controller.DeleteChatroom.Uri	true	"uri"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth

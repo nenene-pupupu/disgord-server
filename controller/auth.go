@@ -18,9 +18,9 @@ type Token struct {
 
 // SignIn godoc
 //
-//	@Description	Sign in and receive an access token.
 //	@Description	Set "Authorization" header with the "Bearer ${accessToken}" to authenticate requests.
 //	@Tags			auth
+//	@Summary		sign in and receive an access token
 //	@Param			body	body		controller.SignIn.Body	true	"Request body"
 //	@Success		200		{object}	controller.Token
 //	@Failure		401		"invalid username or password"
@@ -73,6 +73,7 @@ func (*Controller) SignIn(c *gin.Context) {
 // SignUp godoc
 //
 //	@Tags		auth
+//	@Summary	sign up and create a new user
 //	@Param		body	body		controller.SignUp.Body	true	"Request body"
 //	@Success	201		{object}	ent.User
 //	@Failure	409		"username already exists"

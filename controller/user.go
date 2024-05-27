@@ -15,6 +15,7 @@ import (
 // GetAllUsers godoc
 //
 //	@Tags		user
+//	@Summary	list all users
 //	@Param		Authorization	header	string	true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.User
@@ -36,6 +37,7 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 // GetUserByID godoc
 //
 //	@Tags		user
+//	@Summary	get a single user by id
 //	@Param		uri				path	controller.GetUserByID.Uri	true	"path"
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
@@ -67,6 +69,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 // GetMyProfile godoc
 //
 //	@Tags		user
+//	@Summary	get the current user
 //	@Param		Authorization	header	string	true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
@@ -90,6 +93,7 @@ func (*Controller) GetMyProfile(c *gin.Context) {
 // UpdateMyProfile godoc
 //
 //	@Tags		user
+//	@Summary	update the current user
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Param		body			body	controller.UpdateMyProfile.Body	true	"Request body"
 //	@Security	BearerAuth
@@ -170,6 +174,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 // CancelAccount godoc
 //
 //	@Tags		user
+//	@Summary	cancel the current user account and delete all related data
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Param		body			body	controller.CancelAccount.Body	true	"Request body"
 //	@Security	BearerAuth

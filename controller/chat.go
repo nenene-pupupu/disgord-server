@@ -12,6 +12,7 @@ import (
 // GetAllChats godoc
 //
 //	@Tags		chat
+//	@Summary	list all chats with the given query
 //	@Param		q				query	controller.GetAllChats.Query	true	"query"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
@@ -50,6 +51,7 @@ func (*Controller) GetAllChats(c *gin.Context) {
 // GetChatByID godoc
 //
 //	@Tags		chat
+//	@Summary	get a single chat by id
 //	@Param		uri				path	controller.GetChatByID.Uri	true	"path"
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth

@@ -28,6 +28,7 @@ var upgrader = websocket.Upgrader{
 //	@Description	Example message: {"chatroomId": 1, "senderId": 1, "action": "SEND_TEXT", "content": "Hello, world!"}
 //	@Description	Example message: {"chatroomId": 1, "senderId": 1, "action": "MUTE"}
 //	@Tags			websocket
+//	@Summary		establish a WebSocket connection
 //	@Param			Authorization	header	string	true	"Bearer AccessToken"
 //	@Security		BearerAuth
 //	@Success		101
