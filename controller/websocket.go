@@ -194,9 +194,9 @@ const (
 )
 
 type Message struct {
-	ChatroomID int    `json:"chatroomId"`
-	SenderID   int    `json:"senderId"`
-	Action     string `json:"action"`
+	ChatroomID int    `json:"chatroomId" binding:"required"`
+	SenderID   int    `json:"senderId" binding:"required"`
+	Action     string `json:"action" binding:"required"`
 	Content    string `json:"content,omitempty"`
 }
 
