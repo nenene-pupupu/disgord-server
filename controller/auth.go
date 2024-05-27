@@ -79,8 +79,9 @@ func (*Controller) SignIn(c *gin.Context) {
 //	@Router		/auth/sign-up [post]
 func (*Controller) SignUp(c *gin.Context) {
 	type Body struct {
-		Username string `binding:"required"`
-		Password string `binding:"required"`
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		DisplayName string `json:"displayName" binding:"required"`
 	}
 
 	var body Body
@@ -117,7 +118,7 @@ func (*Controller) SignUp(c *gin.Context) {
 	user, err := tx.User.
 		Create().
 		SetUsername(body.Username).
-		SetDisplayName(body.Username).
+		SetDisplayName(body.DisplayName).
 		Save(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
