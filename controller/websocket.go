@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 //	@Success		101
 //	@Failure		400	"invalid scheme"
 //	@Failure		401	"unauthorized"
-//	@Response		200	{object}	ws.Message
+//	@Response		200	{object}	controller.Message
 //	@Router			/ws [get]
 func (*Controller) ConnectWebsocket(c *gin.Context) {
 	if c.Request.URL.Scheme != "ws" {
