@@ -54,7 +54,7 @@ func main() {
 
 	r.Use(jwt.JWTAuthMiddleware())
 
-	user := r.Group("/user")
+	user := r.Group("/users")
 	{
 		user.GET("", c.GetAllUsers)
 		user.GET("/:id", c.GetUserByID)
@@ -63,7 +63,7 @@ func main() {
 		user.DELETE("/me", c.CancelAccount)
 	}
 
-	chatroom := r.Group("/chatroom")
+	chatroom := r.Group("/chatrooms")
 	{
 		chatroom.GET("", c.GetAllChatrooms)
 		chatroom.GET("/:id", c.GetChatroomByID)
@@ -72,7 +72,7 @@ func main() {
 		chatroom.DELETE("/:id", c.DeleteChatroom)
 	}
 
-	chat := r.Group("/chat")
+	chat := r.Group("/chats")
 	{
 		chat.GET("", c.GetAllChats)
 		chat.GET("/:id", c.GetChatByID)

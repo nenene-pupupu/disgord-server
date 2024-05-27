@@ -19,7 +19,7 @@ import (
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.Chatroom
 //	@Failure	401	"unauthorized"
-//	@Router		/chatroom [get]
+//	@Router		/chatrooms [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
 		OwnerID int `form:"ownerId" binding:"omitempty"`
@@ -55,7 +55,7 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 //	@Success	200	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find chatroom"
-//	@Router		/chatroom/{id} [get]
+//	@Router		/chatrooms/{id} [get]
 func (*Controller) GetChatroomByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -89,7 +89,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 //	@Security	BearerAuth
 //	@Success	201	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"
-//	@Router		/chatroom [post]
+//	@Router		/chatrooms [post]
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
 		Name     string `binding:"required"`
@@ -132,7 +132,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 //	@Success	200	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find chatroom"
-//	@Router		/chatroom/{id} [patch]
+//	@Router		/chatrooms/{id} [patch]
 func (*Controller) UpdateChatroom(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -177,7 +177,7 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 //	@Failure	401	"unauthorized"
 //	@Failure	403	"chatroom owner only"
 //	@Failure	404	"cannot find chatroom"
-//	@Router		/chatroom/{id} [delete]
+//	@Router		/chatrooms/{id} [delete]
 func (*Controller) DeleteChatroom(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`

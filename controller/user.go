@@ -20,7 +20,7 @@ import (
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.User
 //	@Failure	401	"unauthorized"
-//	@Router		/user [get]
+//	@Router		/users [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
 	users, err := client.User.
 		Query().
@@ -44,7 +44,7 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 //	@Success	200	{object}	ent.User
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/{id} [get]
+//	@Router		/users/{id} [get]
 func (*Controller) GetUserByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
@@ -75,7 +75,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Success	200	{object}	ent.User
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/me [get]
+//	@Router		/users/me [get]
 func (*Controller) GetMyProfile(c *gin.Context) {
 	userID := jwt.GetCurrentUserID(c)
 
@@ -100,7 +100,7 @@ func (*Controller) GetMyProfile(c *gin.Context) {
 //	@Success	200	{object}	ent.User
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/me [patch]
+//	@Router		/users/me [patch]
 func (*Controller) UpdateMyProfile(c *gin.Context) {
 	type Body struct {
 		Password    string `json:"password"`
@@ -181,7 +181,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 //	@Success	204
 //	@Failure	401	"invalid password"
 //	@Failure	404	"cannot find user"
-//	@Router		/user/me [delete]
+//	@Router		/users/me [delete]
 func (*Controller) CancelAccount(c *gin.Context) {
 	type Body struct {
 		Password string `json:"password" binding:"required"`

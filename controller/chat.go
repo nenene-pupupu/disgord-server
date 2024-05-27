@@ -18,7 +18,7 @@ import (
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.Chat
 //	@Failure	401	"unauthorized"
-//	@Router		/chat [get]
+//	@Router		/chats [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
 		ChatroomID int `form:"chatroomId"`
@@ -58,7 +58,7 @@ func (*Controller) GetAllChats(c *gin.Context) {
 //	@Success	200	{object}	ent.Chat
 //	@Failure	401	"unauthorized"
 //	@Failure	404	"cannot find chat"
-//	@Router		/chat/{id} [get]
+//	@Router		/chats/{id} [get]
 func (*Controller) GetChatByID(c *gin.Context) {
 	type Uri struct {
 		ID int `uri:"id" binding:"required"`
