@@ -15,7 +15,7 @@ sleep 2
 for i in {1..6}; do
     curl -X POST \
         -H "Content-Type: application/json" \
-        -d "{\"username\":\"user$i\",\"password\":\"user$i\"}" \
+        -d "{\"username\":\"user$i\",\"password\":\"user$i\",\"displayName\":\"user$i\"}" \
         http://localhost:8080/auth/sign-up
     echo
     sleep 1
