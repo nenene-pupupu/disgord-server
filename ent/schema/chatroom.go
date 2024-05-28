@@ -20,7 +20,8 @@ func (Chatroom) Fields() []ent.Field {
 		field.String("name"),
 
 		field.String("password").
-			Optional(),
+			Optional().
+			Sensitive(),
 
 		field.Int("owner_id"),
 

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"disgord/ent/auth"
 	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
@@ -43,11 +42,9 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	auth, err := client.Auth.
+	user, err := client.User.
 		Query().
-		Where(auth.HasUserWith(
-			user.Username(body.Username),
-		)).
+		Where(user.Username(body.Username)).
 		Only(ctx)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -56,7 +53,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid username or password",
@@ -64,7 +61,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	tokenString, err := issueToken(auth.UserID)
+	tokenString, err := issueToken(user.ID)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
@@ -114,37 +111,13 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	defer tx.Rollback()
-
-	user, err := tx.User.
+	user, err := client.User.
 		Create().
 		SetUsername(body.Username).
+		SetPassword(string(hash)).
 		SetDisplayName(body.DisplayName).
 		Save(ctx)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-
-	_, err = tx.Auth.
-		Create().
-		SetUser(user).
-		SetPassword(string(hash)).
-		Save(ctx)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return

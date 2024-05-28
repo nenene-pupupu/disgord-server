@@ -20,6 +20,9 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			Unique(),
 
+		field.String("password").
+			Sensitive(),
+
 		field.String("display_name"),
 
 		field.Time("created_at").
@@ -34,10 +37,6 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("auth", Auth.Type).
-			Unique().
-			Annotations(entsql.OnDelete(entsql.Cascade)),
-
 		edge.To("chatrooms", Chatroom.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 

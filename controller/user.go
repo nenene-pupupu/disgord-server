@@ -4,9 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"disgord/ent/auth"
-	"disgord/ent/user"
-
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -129,9 +126,8 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 			return
 		}
 
-		_, err = tx.Auth.
-			Update().
-			Where(auth.HasUserWith(user.ID(userID))).
+		_, err = tx.User.
+			UpdateOneID(userID).
 			SetPassword(string(hash)).
 			Save(ctx)
 		if err != nil {
@@ -201,10 +197,7 @@ func (*Controller) CancelAccount(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	auth, err := tx.Auth.
-		Query().
-		Where(auth.HasUserWith(user.ID(userID))).
-		Only(ctx)
+	user, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find user",
@@ -212,7 +205,7 @@ func (*Controller) CancelAccount(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid password",
