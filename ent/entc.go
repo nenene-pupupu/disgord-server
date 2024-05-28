@@ -10,8 +10,6 @@ import (
 	"entgo.io/ent/entc"
 	"entgo.io/ent/entc/gen"
 	"entgo.io/ent/schema/edge"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func main() {
@@ -24,7 +22,7 @@ func main() {
 						node.Annotations.Set(tag.Name(), tag)
 
 						for _, field := range node.Fields {
-							field.StructTag = fmt.Sprintf(`json:"%s,omitempty"`, snakeToCamel(field.Name))
+							field.StructTag = fmt.Sprintf(`json:"%s,omitempty"`, camel(field.Name))
 						}
 					}
 					return next.Generate(g)
@@ -37,15 +35,13 @@ func main() {
 	}
 }
 
-func snakeToCamel(s string) string {
-	caser := cases.Title(language.Und)
-
-	parts := strings.Split(s, "_")
-	for i, part := range parts {
+func camel(s string) string {
+	words := strings.Split(s, "_")
+	for i, word := range words {
 		if i > 0 {
-			parts[i] = caser.String(part)
+			words[i] = strings.ToUpper(word[:1]) + word[1:]
 		}
 	}
 
-	return strings.Join(parts, "")
+	return strings.Join(words, "")
 }
