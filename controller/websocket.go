@@ -190,7 +190,7 @@ type Message struct {
 	ChatroomID int    `json:"chatroomId" binding:"required"`
 	SenderID   int    `json:"senderId" binding:"required"`
 	Action     string `json:"action" binding:"required"`
-	Content    string `json:"content,omitempty"`
+	Content    string `json:"content"`
 }
 
 const (

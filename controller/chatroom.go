@@ -21,7 +21,7 @@ import (
 //	@Router		/chatrooms [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
-		OwnerID int `form:"ownerId" binding:"omitempty"`
+		OwnerID int `form:"ownerId"`
 	}
 
 	var query Query
@@ -89,7 +89,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
 		Name     string `binding:"required"`
-		Password string `binding:"omitempty"`
+		Password string
 	}
 
 	var body Body
