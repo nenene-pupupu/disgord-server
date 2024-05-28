@@ -31,18 +31,10 @@ var upgrader = websocket.Upgrader{
 //	@Param			Authorization	header	string	true	"Bearer AccessToken"
 //	@Security		BearerAuth
 //	@Success		101
-//	@Failure		400	"invalid scheme"
 //	@Failure		401	"unauthorized"
 //	@Response		200	{object}	controller.Message
 //	@Router			/ws [get]
 func (*Controller) ConnectWebsocket(c *gin.Context) {
-	if c.Request.URL.Scheme != "ws" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "invalid scheme",
-		})
-		return
-	}
-
 	userID := getCurrentUserID(c)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
