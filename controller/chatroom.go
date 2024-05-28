@@ -65,10 +65,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 		return
 	}
 
-	chatroom, err := client.Chatroom.
-		Query().
-		Where(chatroom.ID(uri.ID)).
-		Only(ctx)
+	chatroom, err := client.Chatroom.Get(ctx, uri.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find chatroom",

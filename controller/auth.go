@@ -93,17 +93,6 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	_, err := client.User.
-		Query().
-		Where(user.Username(body.Username)).
-		Only(ctx)
-	if err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"message": "username already exists",
-		})
-		return
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -118,8 +107,9 @@ func (*Controller) SignUp(c *gin.Context) {
 		SetDisplayName(body.DisplayName).
 		Save(ctx)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		log.Println(err)
+		c.JSON(http.StatusConflict, gin.H{
+			"message": "username already exists",
+		})
 		return
 	}
 

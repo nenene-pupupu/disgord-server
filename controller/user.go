@@ -118,6 +118,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
+	userUpdate := tx.User.UpdateOneID(userID)
 	if body.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 		if err != nil {
@@ -126,34 +127,16 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 			return
 		}
 
-		_, err = tx.User.
-			UpdateOneID(userID).
-			SetPassword(string(hash)).
-			Save(ctx)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
+		userUpdate = userUpdate.SetPassword(string(hash))
 	}
-
 	if body.DisplayName != "" {
-		_, err := tx.User.
-			UpdateOneID(userID).
-			SetDisplayName(body.DisplayName).
-			Save(ctx)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
+		userUpdate = userUpdate.SetDisplayName(body.DisplayName)
 	}
 
-	user, err := tx.User.Get(ctx, userID)
+	user, err := userUpdate.Save(ctx)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "cannot find user",
-		})
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
