@@ -7,7 +7,6 @@ import (
 	"disgord/ent/chatroom"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // GetAllChatrooms godoc
@@ -105,7 +104,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		SetName(body.Name).
 		SetOwnerID(userID)
 	if body.Password != "" {
-		chatroomCreate.SetPassword(body.Password)
+		chatroomCreate = chatroomCreate.SetPassword(hashPassword(body.Password))
 	}
 
 	chatroom, err := chatroomCreate.Save(ctx)
@@ -180,14 +179,7 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		chatroomUpdate = chatroomUpdate.SetName(body.Name)
 	}
 	if body.Password != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
-
-		chatroomUpdate = chatroomUpdate.SetPassword(string(hash))
+		chatroomUpdate = chatroomUpdate.SetPassword(hashPassword(body.Password))
 	}
 
 	chatroom, err = chatroomUpdate.Save(ctx)

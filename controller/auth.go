@@ -53,8 +53,7 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-	if err != nil {
+	if !verifyPassword(user.Password, body.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid username or password",
 		})
@@ -93,17 +92,10 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-
 	user, err := client.User.
 		Create().
 		SetUsername(body.Username).
-		SetPassword(string(hash)).
+		SetPassword(hashPassword(body.Password)).
 		SetDisplayName(body.DisplayName).
 		Save(ctx)
 	if err != nil {
@@ -186,4 +178,18 @@ func issueToken(userID int) (string, error) {
 func getCurrentUserID(c *gin.Context) int {
 	userID, _ := c.Get("userID")
 	return userID.(int)
+}
+
+func hashPassword(password string) string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(hash)
+}
+
+func verifyPassword(hash, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }

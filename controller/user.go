@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // GetAllUsers godoc
@@ -120,14 +119,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 
 	userUpdate := tx.User.UpdateOneID(userID)
 	if body.Password != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
-
-		userUpdate = userUpdate.SetPassword(string(hash))
+		userUpdate = userUpdate.SetPassword(hashPassword(body.Password))
 	}
 	if body.DisplayName != "" {
 		userUpdate = userUpdate.SetDisplayName(body.DisplayName)
@@ -188,8 +180,7 @@ func (*Controller) CancelAccount(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-	if err != nil {
+	if !verifyPassword(user.Password, body.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid password",
 		})
