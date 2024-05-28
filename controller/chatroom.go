@@ -123,7 +123,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 //	@Summary	update the chatroom
 //	@Param		uri				path	controller.UpdateChatroom.Uri	true	"uri"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
-//	@Param		body			body	controller.UpdateChatroom.Body	true	"Request body"
+//	@Param		body			body	controller.UpdateChatroom.Body	false	"Request body"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"

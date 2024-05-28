@@ -91,7 +91,7 @@ func (*Controller) GetMyProfile(c *gin.Context) {
 //	@Tags		user
 //	@Summary	update the current user
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
-//	@Param		body			body	controller.UpdateMyProfile.Body	true	"Request body"
+//	@Param		body			body	controller.UpdateMyProfile.Body	false	"Request body"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
 //	@Failure	401	"unauthorized"
