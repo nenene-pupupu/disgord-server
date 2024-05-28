@@ -33,11 +33,6 @@ func main() {
 		auth.POST("/sign-up", c.SignUp)
 	}
 
-	ws := r.Group("/ws")
-	{
-		ws.GET("", c.ConnectWebsocket)
-	}
-
 	r.Use(c.JWTAuthMiddleware())
 
 	user := r.Group("/users")
@@ -62,6 +57,11 @@ func main() {
 	{
 		chat.GET("", c.GetAllChats)
 		chat.GET("/:id", c.GetChatByID)
+	}
+
+	ws := r.Group("/ws")
+	{
+		ws.GET("", c.ConnectWebsocket)
 	}
 
 	r.Run()

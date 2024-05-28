@@ -19,6 +19,7 @@ var upgrader = websocket.Upgrader{
 // ConnectWebsocket godoc
 //
 //	@Description	Use the ws:// scheme instead of the http:// scheme to establish a WebSocket connection.
+//	@Description	And append the access token to the URL as a query parameter, e.g. "ws://localhost:8080/ws?access_token=${accessToken}".
 //	@Description	Send and receive messages in JSON format, containing 3 required fields: chatroomId, senderId, and action, and 1 optional field: content.
 //	@Description	Actions: [JOIN_ROOM, LEAVE_ROOM, SEND_TEXT, MUTE, UNMUTE, TURN_ON_CAM, TURN_OFF_CAM, KICKED]
 //	@Description	Only SEND_TEXT action requires the content field.
@@ -28,7 +29,7 @@ var upgrader = websocket.Upgrader{
 //	@Description	Example message: {"chatroomId": 1, "senderId": 1, "action": "MUTE"}
 //	@Tags			websocket
 //	@Summary		establish a WebSocket connection
-//	@Param			Authorization	header	string	true	"Bearer AccessToken"
+//	@Param			access_token	query	string	true	"access token"
 //	@Security		BearerAuth
 //	@Success		101
 //	@Failure		401	"unauthorized"

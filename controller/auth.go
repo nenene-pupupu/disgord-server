@@ -162,7 +162,7 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := request.ParseFromRequest(
 			c.Request,
-			request.AuthorizationHeaderExtractor,
+			request.OAuth2Extractor,
 			func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
