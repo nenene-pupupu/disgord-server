@@ -17,12 +17,12 @@ func main() {
 		Hooks: []gen.Hook{
 			func(next gen.Generator) gen.Generator {
 				return gen.GenerateFunc(func(g *gen.Graph) error {
-					for _, node := range g.Nodes {
-						tag := edge.Annotation{StructTag: `json:"-"`}
-						node.Annotations.Set(tag.Name(), tag)
+					tag := edge.Annotation{StructTag: `json:"-"`}
+					for _, n := range g.Nodes {
+						n.Annotations.Set(tag.Name(), tag)
 
-						for _, field := range node.Fields {
-							field.StructTag = fmt.Sprintf(`json:"%s,omitempty"`, camel(field.Name))
+						for _, f := range n.Fields {
+							f.StructTag = fmt.Sprintf(`json:"%s,omitempty"`, camel(f.Name))
 						}
 					}
 					return next.Generate(g)
