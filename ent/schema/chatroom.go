@@ -26,7 +26,12 @@ func (Chatroom) Fields() []ent.Field {
 		field.Int("owner_id"),
 
 		field.Time("created_at").
-			Default(time.Now()),
+			Default(time.Now).
+			Immutable(),
+
+		field.Time("updated_at").
+			Default(time.Now).
+			UpdateDefault(time.Now),
 	}
 }
 
