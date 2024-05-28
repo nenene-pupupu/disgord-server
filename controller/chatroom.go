@@ -7,6 +7,7 @@ import (
 	"disgord/ent/chatroom"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // GetAllChatrooms godoc
@@ -127,6 +128,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"
+//	@Failure	403	"chatroom owner only"
 //	@Failure	404	"cannot find chatroom"
 //	@Router		/chatrooms/{id} [patch]
 func (*Controller) UpdateChatroom(c *gin.Context) {
@@ -140,7 +142,8 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 	}
 
 	type Body struct {
-		Name string `binding:"required"`
+		Name     string `json:"name"`
+		Password string `json:"password"`
 	}
 
 	var body Body
@@ -148,14 +151,55 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		return
 	}
 
-	chatroom, err := client.Chatroom.
-		UpdateOneID(uri.ID).
-		SetName(body.Name).
-		Save(ctx)
+	userID := getCurrentUserID(c)
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	chatroom, err := tx.Chatroom.Get(ctx, uri.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "cannot find chatroom",
 		})
+		return
+	}
+
+	if chatroom.OwnerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "chatroom owner only",
+		})
+		return
+	}
+
+	chatroomUpdate := chatroom.Update()
+	if body.Name != "" {
+		chatroomUpdate = chatroomUpdate.SetName(body.Name)
+	}
+	if body.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Println(err)
+			return
+		}
+
+		chatroomUpdate = chatroomUpdate.SetPassword(string(hash))
+	}
+
+	chatroom, err = chatroomUpdate.Save(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
