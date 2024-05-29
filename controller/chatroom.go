@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"disgord/ent/chatroom"
+	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +22,8 @@ import (
 //	@Router		/chatrooms [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
-		OwnerID int `form:"ownerId"`
+		OwnerID  int `form:"ownerId"`
+		MemberID int `form:"memberId"`
 	}
 
 	var query Query
@@ -32,6 +34,9 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 	chatroomQuery := client.Chatroom.Query()
 	if query.OwnerID != 0 {
 		chatroomQuery = chatroomQuery.Where(chatroom.OwnerID(query.OwnerID))
+	}
+	if query.MemberID != 0 {
+		chatroomQuery = chatroomQuery.Where(chatroom.HasMembersWith(user.ID(query.MemberID)))
 	}
 
 	chatrooms, err := chatroomQuery.All(ctx)
@@ -104,7 +109,9 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		SetName(body.Name).
 		SetOwnerID(userID)
 	if body.Password != "" {
-		chatroomCreate = chatroomCreate.SetPassword(hashPassword(body.Password))
+		chatroomCreate = chatroomCreate.
+			SetIsPrivate(true).
+			SetPassword(hashPassword(body.Password))
 	}
 
 	chatroom, err := chatroomCreate.Save(ctx)
@@ -179,7 +186,9 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		chatroomUpdate = chatroomUpdate.SetName(body.Name)
 	}
 	if body.Password != "" {
-		chatroomUpdate = chatroomUpdate.SetPassword(hashPassword(body.Password))
+		chatroomUpdate = chatroomUpdate.
+			SetIsPrivate(true).
+			SetPassword(hashPassword(body.Password))
 	}
 
 	chatroom, err = chatroomUpdate.Save(ctx)
@@ -264,4 +273,71 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 	kickAllClientsFromRoom(uri.ID)
 
 	c.Status(http.StatusNoContent)
+}
+
+// MakeChatroomPublic godoc
+//
+//	@Tags		chatroom
+//	@Summary	make the chatroom public and clear the password and the member list
+//	@Param		uri				path	controller.MakeChatroomPublic.Uri	true	"uri"
+//	@Param		Authorization	header	string								true	"Bearer AccessToken"
+//	@Security	BearerAuth
+//	@Success	200	{object}	ent.Chatroom
+//	@Failure	401	"unauthorized"
+//	@Failure	403	"chatroom owner only"
+//	@Failure	404	"cannot find chatroom"
+//	@Router		/chatrooms/{id}/public [patch]
+func (*Controller) MakeChatroomPublic(c *gin.Context) {
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
+		return
+	}
+
+	userID := getCurrentUserID(c)
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	chatroom, err := tx.Chatroom.Get(ctx, uri.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chatroom",
+		})
+		return
+	}
+
+	if chatroom.OwnerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "chatroom owner only",
+		})
+		return
+	}
+
+	chatroom, err = chatroom.Update().
+		SetIsPrivate(false).
+		ClearPassword().
+		ClearMembers().
+		Save(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, chatroom)
 }

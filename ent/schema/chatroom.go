@@ -19,6 +19,9 @@ func (Chatroom) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name"),
 
+		field.Bool("is_private").
+			Default(false),
+
 		field.String("password").
 			Optional().
 			Sensitive(),
@@ -43,6 +46,9 @@ func (Chatroom) Edges() []ent.Edge {
 			Field("owner_id").
 			Unique().
 			Required(),
+
+		edge.From("members", User.Type).
+			Ref("allowed_chatrooms"),
 
 		edge.To("chats", Chat.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),

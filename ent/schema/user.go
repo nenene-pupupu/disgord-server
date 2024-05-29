@@ -41,6 +41,8 @@ func (User) Edges() []ent.Edge {
 		edge.To("chatrooms", Chatroom.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 
+		edge.To("allowed_chatrooms", Chatroom.Type),
+
 		edge.To("chats", Chat.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
