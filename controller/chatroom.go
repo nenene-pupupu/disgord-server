@@ -111,7 +111,8 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 	if body.Password != "" {
 		chatroomCreate = chatroomCreate.
 			SetIsPrivate(true).
-			SetPassword(hashPassword(body.Password))
+			SetPassword(hashPassword(body.Password)).
+			AddMemberIDs(userID)
 	}
 
 	chatroom, err := chatroomCreate.Save(ctx)
@@ -273,6 +274,98 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 	kickAllClientsFromRoom(uri.ID)
 
 	c.Status(http.StatusNoContent)
+}
+
+// JoinChatroom godoc
+//
+//	@Description	If the chatroom is public or the user is already a member of the private chatroom, it will ignore the password.
+//	@Description	Otherwise, the user must provide the password to join.
+//	@Tags			chatroom
+//	@Summary		join the chatroom, with password if it is private
+//	@Param			uri				path	controller.JoinChatroom.Uri		true	"uri"
+//	@Param			Authorization	header	string							true	"Bearer AccessToken"
+//	@Param			body			body	controller.JoinChatroom.Body	false	"Request body"
+//	@Success		200				{array}	controller.Client
+//	@Failure		401				"incorrect password"
+//	@Failure		403				"not a member of the chatroom, password required"
+//	@Failure		404				"cannot find chatroom"
+//	@Router			/chatrooms/{id}/join [post]
+func (*Controller) JoinChatroom(c *gin.Context) {
+	type Uri struct {
+		ID int `uri:"id" binding:"required"`
+	}
+
+	var uri Uri
+	if err := c.BindUri(&uri); err != nil {
+		return
+	}
+
+	type Body struct {
+		Password string `json:"password"`
+	}
+
+	var body Body
+	if err := c.Bind(&body); err != nil {
+		return
+	}
+
+	userID := getCurrentUserID(c)
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	chatroom, err := tx.Chatroom.Get(ctx, uri.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find chatroom",
+		})
+		return
+	}
+
+	if chatroom.IsPrivate {
+		_, err = chatroom.QueryMembers().
+			Where(user.ID(userID)).
+			Only(ctx)
+		if err != nil {
+			if body.Password == "" {
+				c.JSON(http.StatusForbidden, gin.H{
+					"message": "not a member of the chatroom, password required",
+				})
+				return
+			}
+
+			if !verifyPassword(body.Password, chatroom.Password) {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"message": "incorrect password",
+				})
+				return
+			}
+
+			_, err = chatroom.Update().
+				AddMemberIDs(userID).
+				Save(ctx)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				log.Println(err)
+				return
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	clients := joinRoom(uri.ID, userID)
+
+	c.JSON(http.StatusOK, clients)
 }
 
 // MakeChatroomPublic godoc

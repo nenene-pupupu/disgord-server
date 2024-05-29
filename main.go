@@ -51,6 +51,7 @@ func main() {
 		chatroom.POST("", c.CreateChatroom)
 		chatroom.PATCH("/:id", c.UpdateChatroom)
 		chatroom.DELETE("/:id", c.DeleteChatroom)
+		chatroom.POST("/:id/join", c.JoinChatroom)
 		chatroom.PATCH("/:id/public", c.MakeChatroomPublic)
 	}
 

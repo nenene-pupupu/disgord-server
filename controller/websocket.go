@@ -20,11 +20,18 @@ var upgrader = websocket.Upgrader{
 //
 //	@Description	Use the ws:// scheme instead of the http:// scheme to establish a WebSocket connection.
 //	@Description	And append the access token to the URL as a query parameter, e.g. "ws://localhost:8080/ws?access_token=${accessToken}".
+//	@Description
 //	@Description	Send and receive messages in JSON format, containing 3 required fields: chatroomId, senderId, and action, and 1 optional field: content.
-//	@Description	Actions: [JOIN_ROOM, LEAVE_ROOM, SEND_TEXT, MUTE, UNMUTE, TURN_ON_CAM, TURN_OFF_CAM, KICKED]
 //	@Description	Only SEND_TEXT action requires the content field.
-//	@Description	JOIN_ROOM and LEAVE_ROOM actions let the server know which chatroom the client is in.
-//	@Description	SEND_TEXT action and the other status-related actions will be broadcasted to all clients in the same chatroom.
+//	@Description
+//	@Description	Action types
+//	@Description	JOIN_ROOM: If you receive this action, you should add the sender to the chatroom with a default status (muted and cam off).
+//	@Description	LEAVE_ROOM: If you receive this action, you should remove the sender from the chatroom. And you should send this action when you leave the chatroom.
+//	@Description	SEND_TEXT: If you receive this action, you should display the content in the chatroom. And you should send this action when you send a message.
+//	@Description	MUTE/UNMUTE: If you receive this action, you should mute/unmute the sender. And you should send this action when you mute/unmute yourself.
+//	@Description	TURN_ON_CAM/TURN_OFF_CAM: If you receive this action, you should turn on/off the sender's cam. And you should send this action when you turn on/off your cam.
+//	@Description	KICKED: If you receive this action, you should know that you are kicked from the chatroom.
+//	@Description
 //	@Description	Example message: {"chatroomId": 1, "senderId": 1, "action": "SEND_TEXT", "content": "Hello, world!"}
 //	@Description	Example message: {"chatroomId": 1, "senderId": 1, "action": "MUTE"}
 //	@Tags			websocket
@@ -78,11 +85,11 @@ func (hub *Hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
-			hub.clients[client.id] = client
+			hub.clients[client.ID] = client
 
 		case client := <-hub.unregister:
-			if _, ok := hub.clients[client.id]; ok {
-				delete(hub.clients, client.id)
+			if _, ok := hub.clients[client.ID]; ok {
+				delete(hub.clients, client.ID)
 				close(client.send)
 			}
 
@@ -92,7 +99,7 @@ func (hub *Hub) run() {
 				case client.send <- message:
 				default:
 					close(client.send)
-					delete(hub.clients, client.id)
+					delete(hub.clients, client.ID)
 				}
 			}
 		}
@@ -131,10 +138,10 @@ func (room *Room) run() {
 	for {
 		select {
 		case client := <-room.register:
-			room.clients[client.id] = client
+			room.clients[client.ID] = client
 
 		case client := <-room.unregister:
-			delete(room.clients, client.id)
+			delete(room.clients, client.ID)
 
 			if len(room.clients) == 0 {
 				return
@@ -145,11 +152,42 @@ func (room *Room) run() {
 				select {
 				case client.send <- message:
 				default:
-					delete(room.clients, client.id)
+					delete(room.clients, client.ID)
 				}
 			}
 		}
 	}
+}
+
+func broadcast(room *Room, message Message) {
+	buf, _ := json.Marshal(message)
+	room.broadcast <- buf
+}
+
+func joinRoom(roomID, clientID int) []*Client {
+	room, ok := hub.rooms[roomID]
+	if !ok {
+		room = hub.createRoom(roomID)
+	}
+
+	client, ok := hub.clients[clientID]
+	if ok {
+		room.register <- client
+		client.room = room
+	}
+
+	broadcast(room, Message{
+		ChatroomID: roomID,
+		SenderID:   clientID,
+		Action:     JoinRoomAction,
+	})
+
+	clients := make([]*Client, 0, len(room.clients))
+	for _, client := range room.clients {
+		clients = append(clients, client)
+	}
+
+	return clients
 }
 
 func kickAllClientsFromRoom(roomID int) {
@@ -161,7 +199,7 @@ func kickAllClientsFromRoom(roomID int) {
 	for _, client := range room.clients {
 		message, _ := json.Marshal(Message{
 			ChatroomID: roomID,
-			SenderID:   client.id,
+			SenderID:   client.ID,
 			Action:     KickedAction,
 		})
 		client.send <- message
@@ -210,17 +248,22 @@ const (
 var newline = []byte{'\n'}
 
 type Client struct {
-	id   int
-	conn *websocket.Conn
-	send chan []byte
-	room *Room
+	ID    int             `json:"userId" binding:"required"`
+	conn  *websocket.Conn `json:"-"`
+	send  chan []byte     `json:"-"`
+	room  *Room           `json:"-"`
+	Muted bool            `json:"muted" binding:"required"`
+	CamOn bool            `json:"camOn" binding:"required"`
 }
 
 func newClient(id int, conn *websocket.Conn) *Client {
 	client := &Client{
-		id:   id,
-		conn: conn,
-		send: make(chan []byte, 256),
+		ID:    id,
+		conn:  conn,
+		send:  make(chan []byte, 256),
+		room:  nil,
+		Muted: true,
+		CamOn: false,
 	}
 
 	hub.register <- client
@@ -270,15 +313,6 @@ func (client *Client) readPump() {
 		}
 
 		switch message.Action {
-		case JoinRoomAction:
-			room, ok := hub.rooms[message.ChatroomID]
-			if !ok {
-				room = hub.createRoom(message.ChatroomID)
-			}
-
-			room.register <- client
-			client.room = room
-
 		case LeaveRoomAction:
 			if client.room != nil {
 				client.room.unregister <- client
