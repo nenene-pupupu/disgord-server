@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/pion/webrtc/v3"
 )
 
 var upgrader = websocket.Upgrader{
@@ -113,23 +115,33 @@ func (hub *Hub) createRoom(id int) (room *Room) {
 }
 
 type Room struct {
-	id         int
-	clients    map[int]*Client
-	register   chan *Client
-	unregister chan *Client
-	broadcast  chan []byte
+	id          int
+	clients     map[int]*Client
+	register    chan *Client
+	unregister  chan *Client
+	broadcast   chan []byte
+	listLock    sync.RWMutex
+	trackLocals map[string]*webrtc.TrackLocalStaticRTP
 }
 
 func newRoom(id int) *Room {
 	room := &Room{
-		id:         id,
-		clients:    make(map[int]*Client),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		broadcast:  make(chan []byte, 256),
+		id:          id,
+		clients:     make(map[int]*Client),
+		register:    make(chan *Client),
+		unregister:  make(chan *Client),
+		broadcast:   make(chan []byte, 256),
+		listLock:    sync.RWMutex{},
+		trackLocals: map[string]*webrtc.TrackLocalStaticRTP{},
 	}
 
 	go room.run()
+
+	go func() {
+		for range time.NewTicker(time.Second * 3).C {
+			room.dispatchKeyFrame()
+		}
+	}()
 
 	return room
 }
@@ -139,8 +151,12 @@ func (room *Room) run() {
 		select {
 		case client := <-room.register:
 			room.clients[client.ID] = client
+			client.connectToPeers(room)
 
 		case client := <-room.unregister:
+			client.pc.Close()
+			client.pc = nil
+
 			delete(room.clients, client.ID)
 
 			if len(room.clients) == 0 {
@@ -223,11 +239,16 @@ const (
 	TurnOffCamAction = "TURN_OFF_CAM"
 
 	KickedAction = "KICKED"
+
+	OfferAction     = "OFFER"
+	AnswerAction    = "ANSWER"
+	CandidateAction = "CANDIDATE"
 )
 
 type Message struct {
 	ChatroomID int    `json:"chatroomId" binding:"required"`
 	SenderID   int    `json:"senderId" binding:"required"`
+	TargetID   int    `json:"targetId"`
 	Action     string `json:"action" binding:"required"`
 	Content    string `json:"content"`
 }
@@ -255,6 +276,7 @@ type Client struct {
 	room  *Room           `json:"-"`
 	Muted bool            `json:"muted" binding:"required"`
 	CamOn bool            `json:"camOn" binding:"required"`
+	pc    *webrtc.PeerConnection
 }
 
 func newClient(id int, conn *websocket.Conn) *Client {
@@ -265,6 +287,7 @@ func newClient(id int, conn *websocket.Conn) *Client {
 		room:  nil,
 		Muted: true,
 		CamOn: false,
+		pc:    nil,
 	}
 
 	hub.register <- client
@@ -324,6 +347,16 @@ func (client *Client) readPump() {
 			saveChat(message)
 			fallthrough
 
+		case AnswerAction:
+			answer := webrtc.SessionDescription{}
+			json.Unmarshal([]byte(message.Content), &answer)
+			client.pc.SetRemoteDescription(answer)
+
+		case CandidateAction:
+			candidate := webrtc.ICECandidateInit{}
+			json.Unmarshal([]byte(message.Content), &candidate)
+			client.pc.AddICECandidate(candidate)
+
 		default:
 			if client.room != nil {
 				buf, _ := json.Marshal(message)
@@ -378,4 +411,80 @@ func (client *Client) writePump() {
 			}
 		}
 	}
+}
+
+func (client *Client) connectToPeers(room *Room) {
+	// Create new PeerConnection
+	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	// Accept one audio and one video track incoming
+	for _, typ := range []webrtc.RTPCodecType{webrtc.RTPCodecTypeVideo, webrtc.RTPCodecTypeAudio} {
+		if _, err := pc.AddTransceiverFromKind(typ, webrtc.RTPTransceiverInit{
+			Direction: webrtc.RTPTransceiverDirectionRecvonly,
+		}); err != nil {
+			log.Print(err)
+			return
+		}
+	}
+
+	client.pc = pc
+
+	// Trickle ICE. Emit server candidate to client
+	pc.OnICECandidate(func(i *webrtc.ICECandidate) {
+		if i == nil {
+			return
+		}
+
+		candidateString, err := json.Marshal(i.ToJSON())
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		message, _ := json.Marshal(Message{
+			ChatroomID: room.id,
+			SenderID:   client.ID,
+			Action:     CandidateAction,
+			Content:    string(candidateString),
+		})
+		client.send <- message
+	})
+
+	// If PeerConnection is closed remove it from global list
+	pc.OnConnectionStateChange(func(p webrtc.PeerConnectionState) {
+		switch p {
+		case webrtc.PeerConnectionStateFailed:
+			if err := pc.Close(); err != nil {
+				log.Print(err)
+			}
+		case webrtc.PeerConnectionStateClosed:
+			client.room.signalPeerConnections()
+		default:
+		}
+	})
+
+	pc.OnTrack(func(t *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
+		// Create a track to fan out our incoming video to all peers
+		trackLocal := client.room.addTrack(t)
+		defer client.room.removeTrack(trackLocal)
+
+		buf := make([]byte, 1500)
+		for {
+			i, _, err := t.Read(buf)
+			if err != nil {
+				return
+			}
+
+			if _, err = trackLocal.Write(buf[:i]); err != nil {
+				return
+			}
+		}
+	})
+
+	// Signal for the new PeerConnection
+	client.room.signalPeerConnections()
 }
