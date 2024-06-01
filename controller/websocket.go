@@ -144,6 +144,7 @@ func (room *Room) run() {
 			delete(room.clients, client.ID)
 
 			if len(room.clients) == 0 {
+				delete(hub.rooms, room.id)
 				return
 			}
 
