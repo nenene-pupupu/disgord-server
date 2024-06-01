@@ -345,7 +345,9 @@ func (client *Client) readPump() {
 
 		case SendTextAction:
 			saveChat(message)
-			fallthrough
+			if client.room != nil {
+				broadcast(client.room, message)
+			}
 
 		case AnswerAction:
 			answer := webrtc.SessionDescription{}
