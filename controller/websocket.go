@@ -458,15 +458,15 @@ func (client *Client) connectToPeers(room *Room) {
 				log.Print(err)
 			}
 		case webrtc.PeerConnectionStateClosed:
-			client.room.signalPeerConnections()
+			room.signalPeerConnections()
 		default:
 		}
 	})
 
 	pc.OnTrack(func(t *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
 		// Create a track to fan out our incoming video to all peers
-		trackLocal := client.room.addTrack(t)
-		defer client.room.removeTrack(trackLocal)
+		trackLocal := room.addTrack(t)
+		defer room.removeTrack(trackLocal)
 
 		buf := make([]byte, 1500)
 		for {
@@ -482,5 +482,5 @@ func (client *Client) connectToPeers(room *Room) {
 	})
 
 	// Signal for the new PeerConnection
-	client.room.signalPeerConnections()
+	room.signalPeerConnections()
 }
