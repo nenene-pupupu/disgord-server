@@ -155,6 +155,7 @@ func (room *Room) run() {
 		select {
 		case client := <-room.register:
 			room.clients[client.ID] = client
+			client.room = room
 			client.connectToPeers(room)
 
 		case client := <-room.unregister:
@@ -195,7 +196,6 @@ func joinRoom(roomID, clientID int) []*Client {
 	client, ok := hub.clients[clientID]
 	if ok {
 		room.register <- client
-		client.room = room
 	}
 
 	broadcast(room, Message{
