@@ -90,6 +90,10 @@ func (hub *Hub) run() {
 			hub.clients[client.ID] = client
 
 		case client := <-hub.unregister:
+			if client.room != nil {
+				client.room.unregister <- client
+			}
+
 			if _, ok := hub.clients[client.ID]; ok {
 				delete(hub.clients, client.ID)
 				close(client.send)
@@ -158,6 +162,7 @@ func (room *Room) run() {
 			client.pc = nil
 
 			delete(room.clients, client.ID)
+			client.room = nil
 
 			if len(room.clients) == 0 {
 				delete(hub.rooms, room.id)
@@ -222,7 +227,6 @@ func kickAllClientsFromRoom(roomID int) {
 		client.send <- message
 
 		room.unregister <- client
-		client.room = nil
 	}
 }
 
@@ -243,6 +247,8 @@ const (
 	OfferAction     = "OFFER"
 	AnswerAction    = "ANSWER"
 	CandidateAction = "CANDIDATE"
+
+	InvalidAction = "INVALID"
 )
 
 type Message struct {
@@ -264,10 +270,8 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 65536
 )
-
-var newline = []byte{'\n'}
 
 type Client struct {
 	ID    int             `json:"userId" binding:"required"`
@@ -312,12 +316,7 @@ func saveChat(message Message) {
 func (client *Client) readPump() {
 	defer client.conn.Close()
 
-	defer func() {
-		if client.room != nil {
-			client.room.unregister <- client
-		}
-		hub.unregister <- client
-	}()
+	defer func() { hub.unregister <- client }()
 
 	client.conn.SetReadLimit(maxMessageSize)
 	client.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -335,6 +334,9 @@ func (client *Client) readPump() {
 			}
 			break
 		}
+
+		pretty, _ := json.MarshalIndent(message, "", "  ")
+		log.Println(string(pretty))
 
 		switch message.Action {
 		case LeaveRoomAction:
@@ -360,10 +362,9 @@ func (client *Client) readPump() {
 			client.pc.AddICECandidate(candidate)
 
 		default:
-			if client.room != nil {
-				buf, _ := json.Marshal(message)
-				client.room.broadcast <- buf
-			}
+			message.Action = InvalidAction
+			buf, _ := json.Marshal(message)
+			client.send <- buf
 		}
 	}
 }
@@ -394,13 +395,6 @@ func (client *Client) writePump() {
 				return
 			}
 			w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(client.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-client.send)
-			}
 
 			if err := w.Close(); err != nil {
 				return
