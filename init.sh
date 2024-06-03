@@ -9,6 +9,8 @@ go generate ./...
 go mod tidy
 go build
 
+go run keygen.go
+
 ./disgord &
 sleep 2
 

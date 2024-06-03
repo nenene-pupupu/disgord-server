@@ -2,11 +2,10 @@ package controller
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"disgord/ent/user"
@@ -154,9 +153,12 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 var key *ecdsa.PrivateKey
 
 func init() {
-	var err error
+	b, err := os.ReadFile("disgord.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	key, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err = jwt.ParseECPrivateKeyFromPEM(b)
 	if err != nil {
 		log.Fatal(err)
 	}
