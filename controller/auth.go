@@ -16,6 +16,42 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// SignUp godoc
+//
+//	@Tags		auth
+//	@Summary	sign up and create a new user
+//	@Param		body	body		controller.SignUp.Body	true	"Request body"
+//	@Success	201		{object}	ent.User
+//	@Failure	409		"username already exists"
+//	@Router		/auth/sign-up [post]
+func (*Controller) SignUp(c *gin.Context) {
+	type Body struct {
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		DisplayName string `json:"displayName" binding:"required"`
+	}
+
+	var body Body
+	if err := c.Bind(&body); err != nil {
+		return
+	}
+
+	user, err := client.User.
+		Create().
+		SetUsername(body.Username).
+		SetPassword(hashPassword(body.Password)).
+		SetDisplayName(body.DisplayName).
+		Save(ctx)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"message": "username already exists",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
 type Token struct {
 	AccessToken string `json:"accessToken"`
 }
@@ -71,40 +107,18 @@ func (*Controller) SignIn(c *gin.Context) {
 	})
 }
 
-// SignUp godoc
-//
-//	@Tags		auth
-//	@Summary	sign up and create a new user
-//	@Param		body	body		controller.SignUp.Body	true	"Request body"
-//	@Success	201		{object}	ent.User
-//	@Failure	409		"username already exists"
-//	@Router		/auth/sign-up [post]
-func (*Controller) SignUp(c *gin.Context) {
-	type Body struct {
-		Username    string `json:"username" binding:"required"`
-		Password    string `json:"password" binding:"required"`
-		DisplayName string `json:"displayName" binding:"required"`
-	}
+var key *ecdsa.PrivateKey
 
-	var body Body
-	if err := c.Bind(&body); err != nil {
-		return
-	}
-
-	user, err := client.User.
-		Create().
-		SetUsername(body.Username).
-		SetPassword(hashPassword(body.Password)).
-		SetDisplayName(body.DisplayName).
-		Save(ctx)
+func init() {
+	b, err := os.ReadFile("disgord.pem")
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"message": "username already exists",
-		})
-		return
+		log.Fatal(err)
 	}
 
-	c.JSON(http.StatusCreated, user)
+	key, err = jwt.ParseECPrivateKeyFromPEM(b)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type Claims struct {
@@ -150,18 +164,9 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-var key *ecdsa.PrivateKey
-
-func init() {
-	b, err := os.ReadFile("disgord.pem")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	key, err = jwt.ParseECPrivateKeyFromPEM(b)
-	if err != nil {
-		log.Fatal(err)
-	}
+func getCurrentUserID(c *gin.Context) int {
+	userID, _ := c.Get("userID")
+	return userID.(int)
 }
 
 func issueToken(userID int) (string, error) {
@@ -175,11 +180,6 @@ func issueToken(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 	return token.SignedString(key)
-}
-
-func getCurrentUserID(c *gin.Context) int {
-	userID, _ := c.Get("userID")
-	return userID.(int)
 }
 
 func hashPassword(password string) string {

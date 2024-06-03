@@ -29,8 +29,8 @@ func main() {
 
 	auth := r.Group("/auth")
 	{
-		auth.POST("/sign-in", c.SignIn)
 		auth.POST("/sign-up", c.SignUp)
+		auth.POST("/sign-in", c.SignIn)
 	}
 
 	r.Use(c.JWTAuthMiddleware())
