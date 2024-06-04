@@ -66,7 +66,6 @@ type Hub struct {
 	clients    map[int]*Client
 	register   chan *Client
 	unregister chan *Client
-	broadcast  chan *Message
 }
 
 var hub *Hub
@@ -77,7 +76,6 @@ func init() {
 		clients:    make(map[int]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		broadcast:  make(chan *Message, 256),
 	}
 
 	go hub.run()
@@ -97,16 +95,6 @@ func (hub *Hub) run() {
 			if _, ok := hub.clients[client.ID]; ok {
 				delete(hub.clients, client.ID)
 				close(client.send)
-			}
-
-		case message := <-hub.broadcast:
-			for _, client := range hub.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(hub.clients, client.ID)
-				}
 			}
 		}
 	}
