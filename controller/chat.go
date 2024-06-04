@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"disgord/ent"
 	"disgord/ent/chat"
+	"disgord/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +18,7 @@ import (
 //	@Param		q				query	controller.GetAllChats.Query	true	"query"
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
-//	@Success	200	{array}	ent.Chat
+//	@Success	200	{array}	controller.GetAllChats.Response
 //	@Failure	401	"unauthorized"
 //	@Router		/chats [get]
 func (*Controller) GetAllChats(c *gin.Context) {
@@ -38,14 +40,33 @@ func (*Controller) GetAllChats(c *gin.Context) {
 		chatQuery = chatQuery.Where(chat.SenderID(query.SenderID))
 	}
 
-	chats, err := chatQuery.All(ctx)
+	chats, err := chatQuery.
+		WithSender(func(uq *ent.UserQuery) {
+			uq.Select(user.FieldDisplayName, user.FieldProfileColorIndex)
+		}).
+		All(ctx)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, chats)
+	type Response struct {
+		*ent.Chat
+		Name  string `json:"displayName"`
+		Color uint8  `json:"profileColorIndex"`
+	}
+
+	response := make([]Response, 0, len(chats))
+	for _, chat := range chats {
+		response = append(response, Response{
+			Chat:  chat,
+			Name:  chat.Edges.Sender.DisplayName,
+			Color: chat.Edges.Sender.ProfileColorIndex,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetChatByID godoc
