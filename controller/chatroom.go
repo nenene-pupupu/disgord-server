@@ -282,6 +282,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 //	@Param			uri				path	controller.JoinChatroom.Uri		true	"uri"
 //	@Param			Authorization	header	string							true	"Bearer AccessToken"
 //	@Param			body			body	controller.JoinChatroom.Body	true	"Request body"
+//	@Security		BearerAuth
 //	@Success		200
 //	@Failure		401	"incorrect password"
 //	@Failure		403	"not a member of the chatroom, password required"
