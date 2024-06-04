@@ -8,23 +8,27 @@ import (
 	"disgord/ent/chat"
 	"disgord/ent/user"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/gin-gonic/gin"
 )
 
 // GetAllChats godoc
 //
-//	@Tags		chat
-//	@Summary	list all chats with the given query
-//	@Param		q				query	controller.GetAllChats.Query	true	"query"
-//	@Param		Authorization	header	string							true	"Bearer AccessToken"
-//	@Security	BearerAuth
-//	@Success	200	{array}	controller.GetAllChats.Response
-//	@Failure	401	"unauthorized"
-//	@Router		/chats [get]
+//	@Description	It supports latest-first paging by offset and limit, and returns in oldest-first order.
+//	@Tags			chat
+//	@Summary		list all chats with the given query
+//	@Param			q				query	controller.GetAllChats.Query	true	"query"
+//	@Param			Authorization	header	string							true	"Bearer AccessToken"
+//	@Security		BearerAuth
+//	@Success		200	{array}	controller.GetAllChats.Response
+//	@Failure		401	"unauthorized"
+//	@Router			/chats [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
 		ChatroomID int `form:"chatroomId"`
 		SenderID   int `form:"senderId"`
+		Offset     int `form:"offset"`
+		Limit      int `form:"limit"`
 	}
 
 	var query Query
@@ -40,6 +44,14 @@ func (*Controller) GetAllChats(c *gin.Context) {
 		chatQuery = chatQuery.Where(chat.SenderID(query.SenderID))
 	}
 
+	chatQuery = chatQuery.Order(chat.ByCreatedAt(sql.OrderDesc()))
+	if query.Offset != 0 {
+		chatQuery = chatQuery.Offset(query.Offset)
+	}
+	if query.Limit != 0 {
+		chatQuery = chatQuery.Limit(query.Limit)
+	}
+
 	chats, err := chatQuery.
 		WithSender(func(uq *ent.UserQuery) {
 			uq.Select(user.FieldDisplayName, user.FieldProfileColorIndex)
@@ -49,6 +61,10 @@ func (*Controller) GetAllChats(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return
+	}
+
+	for i, j := 0, len(chats)-1; i < j; i, j = i+1, j-1 {
+		chats[i], chats[j] = chats[j], chats[i]
 	}
 
 	type Response struct {
