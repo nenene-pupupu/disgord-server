@@ -44,7 +44,7 @@ func main() {
 	private := r.Group("")
 	private.Use(c.JWTAuthMiddleware())
 	{
-		user := r.Group("/users")
+		user := private.Group("/users")
 		{
 			user.GET("", c.GetAllUsers)
 			user.GET("/:id", c.GetUserByID)
@@ -53,7 +53,7 @@ func main() {
 			user.DELETE("/me", c.CancelAccount)
 		}
 
-		chatroom := r.Group("/chatrooms")
+		chatroom := private.Group("/chatrooms")
 		{
 			chatroom.GET("/:id", c.GetChatroomByID)
 			chatroom.POST("", c.CreateChatroom)
@@ -63,13 +63,13 @@ func main() {
 			chatroom.PATCH("/:id/public", c.MakeChatroomPublic)
 		}
 
-		chat := r.Group("/chats")
+		chat := private.Group("/chats")
 		{
 			chat.GET("", c.GetAllChats)
 			chat.GET("/:id", c.GetChatByID)
 		}
 
-		ws := r.Group("/ws")
+		ws := private.Group("/ws")
 		{
 			ws.GET("", c.ConnectWebsocket)
 		}
