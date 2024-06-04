@@ -252,11 +252,11 @@ const (
 )
 
 type Message struct {
-	Action    string    `json:"action" binding:"required"`
-	Content   string    `json:"content,omitempty"`
-	Name      string    `json:"displayName,omitempty"`
-	Color     uint8     `json:"profileColorIndex,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
+	Action    string     `json:"action" binding:"required"`
+	Content   string     `json:"content,omitempty"`
+	Name      string     `json:"displayName,omitempty"`
+	Color     uint8      `json:"profileColorIndex,omitempty"`
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
 }
 
 const (
@@ -339,7 +339,7 @@ func (client *Client) readPump() {
 
 		message.Name = client.Name
 		message.Color = client.Color
-		message.CreatedAt = time.Now()
+		*message.CreatedAt = time.Now()
 
 		pretty, _ := json.MarshalIndent(message, "", "  ")
 		log.Println(string(pretty))
