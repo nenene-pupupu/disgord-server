@@ -299,8 +299,8 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 	}
 
 	type Body struct {
-		Muted    bool   `json:"muted" binding:"required"`
-		CamOn    bool   `json:"camOn" binding:"required"`
+		Muted    *bool  `json:"muted" binding:"required"`
+		CamOn    *bool  `json:"camOn" binding:"required"`
 		Password string `json:"password"`
 	}
 
@@ -363,7 +363,7 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 		return
 	}
 
-	joinRoom(uri.ID, userID, body.Muted, body.CamOn)
+	joinRoom(uri.ID, userID, *body.Muted, *body.CamOn)
 
 	c.Status(http.StatusOK)
 }
