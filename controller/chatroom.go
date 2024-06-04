@@ -93,8 +93,8 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 //	@Router		/chatrooms [post]
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
-		Name     string `binding:"required"`
-		Password string
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password"`
 	}
 
 	var body Body

@@ -53,7 +53,7 @@ func (*Controller) SignUp(c *gin.Context) {
 }
 
 type Token struct {
-	AccessToken string `json:"accessToken"`
+	AccessToken string `json:"accessToken" binding:"required"`
 }
 
 // SignIn godoc
@@ -68,8 +68,8 @@ type Token struct {
 //	@Router			/auth/sign-in [post]
 func (*Controller) SignIn(c *gin.Context) {
 	type Body struct {
-		Username string `binding:"required"`
-		Password string `binding:"required"`
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 
 	var body Body
