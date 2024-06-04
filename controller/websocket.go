@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"disgord/ent"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v3"
@@ -44,10 +46,19 @@ var upgrader = websocket.Upgrader{
 //	@Security		BearerAuth
 //	@Success		101
 //	@Failure		401	"unauthorized"
+//	@Failure		404	"cannot find user"
 //	@Response		200	{object}	controller.Message
 //	@Router			/ws [get]
 func (*Controller) ConnectWebsocket(c *gin.Context) {
 	userID := getCurrentUserID(c)
+
+	user, err := client.User.Get(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -55,7 +66,7 @@ func (*Controller) ConnectWebsocket(c *gin.Context) {
 		return
 	}
 
-	client := newClient(userID, conn)
+	client := newClient(conn, user)
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
@@ -87,15 +98,15 @@ func (hub *Hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
-			hub.clients[client.ID] = client
+			hub.clients[client.id] = client
 
 		case client := <-hub.unregister:
 			if client.room != nil {
 				client.room.unregister <- client
 			}
 
-			if _, ok := hub.clients[client.ID]; ok {
-				delete(hub.clients, client.ID)
+			if _, ok := hub.clients[client.id]; ok {
+				delete(hub.clients, client.id)
 				close(client.send)
 			}
 		}
@@ -144,7 +155,7 @@ func (room *Room) run() {
 	for {
 		select {
 		case client := <-room.register:
-			room.clients[client.ID] = client
+			room.clients[client.id] = client
 			client.room = room
 			client.connectToPeers(room)
 
@@ -154,7 +165,7 @@ func (room *Room) run() {
 			client.pc.Close()
 			client.pc = nil
 
-			delete(room.clients, client.ID)
+			delete(room.clients, client.id)
 			client.room = nil
 
 			if len(room.clients) == 0 {
@@ -169,7 +180,7 @@ func (room *Room) run() {
 				select {
 				case client.send <- message:
 				default:
-					delete(room.clients, client.ID)
+					delete(room.clients, client.id)
 				}
 			}
 		}
@@ -199,9 +210,8 @@ func (room *Room) listClients() *Message {
 	b, _ := json.Marshal(clients)
 
 	return &Message{
-		ChatroomID: room.id,
-		Action:     ListUsersAction,
-		Content:    string(b),
+		Action:  ListUsersAction,
+		Content: string(b),
 	}
 }
 
@@ -211,11 +221,7 @@ func kickAllClientsFromRoom(roomID int) {
 		return
 	}
 
-	message := &Message{
-		ChatroomID: roomID,
-		Action:     KickedAction,
-	}
-
+	message := &Message{Action: KickedAction}
 	for _, client := range room.clients {
 		client.send <- message
 		room.unregister <- client
@@ -246,11 +252,11 @@ const (
 )
 
 type Message struct {
-	ChatroomID int       `json:"chatroomId,omitempty"`
-	SenderID   int       `json:"senderId,omitempty"`
-	Action     string    `json:"action" binding:"required"`
-	Content    string    `json:"content,omitempty"`
-	CreatedAt  time.Time `json:"createdAt"`
+	Action    string    `json:"action" binding:"required"`
+	Content   string    `json:"content,omitempty"`
+	Name      string    `json:"displayName,omitempty"`
+	Color     uint8     `json:"profileColorIndex,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 const (
@@ -268,20 +274,24 @@ const (
 )
 
 type Client struct {
-	ID    int             `json:"userId" binding:"required"`
-	conn  *websocket.Conn `json:"-"`
-	send  chan *Message   `json:"-"`
-	room  *Room           `json:"-"`
-	Muted bool            `json:"muted" binding:"required"`
-	CamOn bool            `json:"camOn" binding:"required"`
-	pc    *webrtc.PeerConnection
+	id    int                    `json:"-"`
+	conn  *websocket.Conn        `json:"-"`
+	send  chan *Message          `json:"-"`
+	room  *Room                  `json:"-"`
+	pc    *webrtc.PeerConnection `json:"-"`
+	Name  string                 `json:"displayName" binding:"required"`
+	Color uint8                  `json:"profileColorIndex" binding:"required"`
+	Muted bool                   `json:"muted" binding:"required"`
+	CamOn bool                   `json:"camOn" binding:"required"`
 }
 
-func newClient(id int, conn *websocket.Conn) *Client {
+func newClient(conn *websocket.Conn, user *ent.User) *Client {
 	client := &Client{
-		ID:    id,
+		id:    user.ID,
 		conn:  conn,
 		send:  make(chan *Message, 256),
+		Name:  user.DisplayName,
+		Color: user.ProfileColorIndex,
 		Muted: false,
 		CamOn: false,
 	}
@@ -291,12 +301,12 @@ func newClient(id int, conn *websocket.Conn) *Client {
 	return client
 }
 
-func saveChat(message *Message) {
+func saveChat(chatroomID, senderID int, content string) {
 	client.Chat.
 		Create().
-		SetChatroomID(message.ChatroomID).
-		SetSenderID(message.SenderID).
-		SetContent(message.Content).
+		SetChatroomID(chatroomID).
+		SetSenderID(senderID).
+		SetContent(content).
 		Save(ctx)
 }
 
@@ -327,18 +337,18 @@ func (client *Client) readPump() {
 			break
 		}
 
+		message.Name = client.Name
+		message.Color = client.Color
+		message.CreatedAt = time.Now()
+
+		pretty, _ := json.MarshalIndent(message, "", "  ")
+		log.Println(string(pretty))
+
 		if client.room == nil {
 			log.Println("the client is not in a room, message ignored")
 			continue
 		}
 		room := client.room
-
-		message.ChatroomID = room.id
-		message.SenderID = client.ID
-		message.CreatedAt = time.Now()
-
-		pretty, _ := json.MarshalIndent(message, "", "  ")
-		log.Println(string(pretty))
 
 		switch message.Action {
 		case ListUsersAction:
@@ -348,7 +358,7 @@ func (client *Client) readPump() {
 			room.unregister <- client
 
 		case SendTextAction:
-			saveChat(message)
+			saveChat(room.id, client.id, message.Content)
 			room.broadcast <- message
 
 		case MuteAction:
@@ -378,11 +388,9 @@ func (client *Client) readPump() {
 			client.pc.AddICECandidate(candidate)
 
 		default:
-			buf, _ := json.MarshalIndent(message, "", "  ")
-
 			client.send <- &Message{
 				Action:  InvalidAction,
-				Content: string(buf),
+				Content: string(pretty),
 			}
 		}
 	}
