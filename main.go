@@ -27,43 +27,52 @@ func main() {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	auth := r.Group("/auth")
+	public := r.Group("")
 	{
-		auth.POST("/sign-up", c.SignUp)
-		auth.POST("/sign-in", c.SignIn)
+		auth := public.Group("/auth")
+		{
+			auth.POST("/sign-up", c.SignUp)
+			auth.POST("/sign-in", c.SignIn)
+		}
+
+		chatroom := public.Group("/chatrooms")
+		{
+			chatroom.GET("", c.GetAllChatrooms)
+		}
 	}
 
-	r.Use(c.JWTAuthMiddleware())
-
-	user := r.Group("/users")
+	private := r.Group("")
+	private.Use(c.JWTAuthMiddleware())
 	{
-		user.GET("", c.GetAllUsers)
-		user.GET("/:id", c.GetUserByID)
-		user.GET("/me", c.GetMyProfile)
-		user.PATCH("/me", c.UpdateMyProfile)
-		user.DELETE("/me", c.CancelAccount)
-	}
+		user := r.Group("/users")
+		{
+			user.GET("", c.GetAllUsers)
+			user.GET("/:id", c.GetUserByID)
+			user.GET("/me", c.GetMyProfile)
+			user.PATCH("/me", c.UpdateMyProfile)
+			user.DELETE("/me", c.CancelAccount)
+		}
 
-	chatroom := r.Group("/chatrooms")
-	{
-		chatroom.GET("", c.GetAllChatrooms)
-		chatroom.GET("/:id", c.GetChatroomByID)
-		chatroom.POST("", c.CreateChatroom)
-		chatroom.PATCH("/:id", c.UpdateChatroom)
-		chatroom.DELETE("/:id", c.DeleteChatroom)
-		chatroom.POST("/:id/join", c.JoinChatroom)
-		chatroom.PATCH("/:id/public", c.MakeChatroomPublic)
-	}
+		chatroom := r.Group("/chatrooms")
+		{
+			chatroom.GET("/:id", c.GetChatroomByID)
+			chatroom.POST("", c.CreateChatroom)
+			chatroom.PATCH("/:id", c.UpdateChatroom)
+			chatroom.DELETE("/:id", c.DeleteChatroom)
+			chatroom.POST("/:id/join", c.JoinChatroom)
+			chatroom.PATCH("/:id/public", c.MakeChatroomPublic)
+		}
 
-	chat := r.Group("/chats")
-	{
-		chat.GET("", c.GetAllChats)
-		chat.GET("/:id", c.GetChatByID)
-	}
+		chat := r.Group("/chats")
+		{
+			chat.GET("", c.GetAllChats)
+			chat.GET("/:id", c.GetChatByID)
+		}
 
-	ws := r.Group("/ws")
-	{
-		ws.GET("", c.ConnectWebsocket)
+		ws := r.Group("/ws")
+		{
+			ws.GET("", c.ConnectWebsocket)
+		}
 	}
 
 	r.Run()

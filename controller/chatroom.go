@@ -14,11 +14,8 @@ import (
 //
 //	@Tags		chatroom
 //	@Summary	list all chatrooms with the given query
-//	@Param		q				query	controller.GetAllChatrooms.Query	true	"query"
-//	@Param		Authorization	header	string								true	"Bearer AccessToken"
-//	@Security	BearerAuth
+//	@Param		q	query	controller.GetAllChatrooms.Query	true	"query"
 //	@Success	200	{array}	ent.Chatroom
-//	@Failure	401	"unauthorized"
 //	@Router		/chatrooms [get]
 func (*Controller) GetAllChatrooms(c *gin.Context) {
 	type Query struct {
