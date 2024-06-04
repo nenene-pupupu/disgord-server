@@ -102,13 +102,12 @@ func (room *Room) signalPeerConnections() {
 				return true
 			}
 
-			message, _ := json.Marshal(&Message{
+			client.send <- &Message{
 				ChatroomID: room.id,
 				SenderID:   client.ID,
 				Action:     OfferAction,
 				Content:    string(offerString),
-			})
-			client.send <- message
+			}
 		}
 
 		return

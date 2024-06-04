@@ -66,7 +66,7 @@ type Hub struct {
 	clients    map[int]*Client
 	register   chan *Client
 	unregister chan *Client
-	broadcast  chan []byte
+	broadcast  chan *Message
 }
 
 var hub *Hub
@@ -77,7 +77,7 @@ func init() {
 		clients:    make(map[int]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		broadcast:  make(chan []byte, 256),
+		broadcast:  make(chan *Message, 256),
 	}
 
 	go hub.run()
@@ -123,7 +123,7 @@ type Room struct {
 	clients     map[int]*Client
 	register    chan *Client
 	unregister  chan *Client
-	broadcast   chan []byte
+	broadcast   chan *Message
 	listLock    sync.RWMutex
 	trackLocals map[string]*webrtc.TrackLocalStaticRTP
 }
@@ -134,7 +134,7 @@ func newRoom(id int) *Room {
 		clients:     make(map[int]*Client),
 		register:    make(chan *Client),
 		unregister:  make(chan *Client),
-		broadcast:   make(chan []byte, 256),
+		broadcast:   make(chan *Message, 256),
 		listLock:    sync.RWMutex{},
 		trackLocals: map[string]*webrtc.TrackLocalStaticRTP{},
 	}
@@ -182,11 +182,6 @@ func (room *Room) run() {
 	}
 }
 
-func broadcast(room *Room, message Message) {
-	buf, _ := json.Marshal(message)
-	room.broadcast <- buf
-}
-
 func joinRoom(roomID, clientID int) []*Client {
 	room, ok := hub.rooms[roomID]
 	if !ok {
@@ -198,11 +193,11 @@ func joinRoom(roomID, clientID int) []*Client {
 		room.register <- client
 	}
 
-	broadcast(room, Message{
+	room.broadcast <- &Message{
 		ChatroomID: roomID,
 		SenderID:   clientID,
 		Action:     JoinRoomAction,
-	})
+	}
 
 	clients := make([]*Client, 0, len(room.clients))
 	for _, client := range room.clients {
@@ -219,12 +214,11 @@ func kickAllClientsFromRoom(roomID int) {
 	}
 
 	for _, client := range room.clients {
-		message, _ := json.Marshal(Message{
+		client.send <- &Message{
 			ChatroomID: roomID,
 			SenderID:   client.ID,
 			Action:     KickedAction,
-		})
-		client.send <- message
+		}
 
 		room.unregister <- client
 	}
@@ -276,7 +270,7 @@ const (
 type Client struct {
 	ID    int             `json:"userId" binding:"required"`
 	conn  *websocket.Conn `json:"-"`
-	send  chan []byte     `json:"-"`
+	send  chan *Message   `json:"-"`
 	room  *Room           `json:"-"`
 	Muted bool            `json:"muted" binding:"required"`
 	CamOn bool            `json:"camOn" binding:"required"`
@@ -287,7 +281,7 @@ func newClient(id int, conn *websocket.Conn) *Client {
 	client := &Client{
 		ID:    id,
 		conn:  conn,
-		send:  make(chan []byte, 256),
+		send:  make(chan *Message, 256),
 		room:  nil,
 		Muted: true,
 		CamOn: false,
@@ -299,7 +293,7 @@ func newClient(id int, conn *websocket.Conn) *Client {
 	return client
 }
 
-func saveChat(message Message) {
+func saveChat(message *Message) {
 	client.Chat.
 		Create().
 		SetChatroomID(message.ChatroomID).
@@ -326,7 +320,7 @@ func (client *Client) readPump() {
 	})
 
 	for {
-		var message Message
+		var message *Message
 		err := client.conn.ReadJSON(&message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -348,7 +342,7 @@ func (client *Client) readPump() {
 		case SendTextAction:
 			saveChat(message)
 			if client.room != nil {
-				broadcast(client.room, message)
+				client.room.broadcast <- message
 			}
 
 		case AnswerAction:
@@ -363,8 +357,7 @@ func (client *Client) readPump() {
 
 		default:
 			message.Action = InvalidAction
-			buf, _ := json.Marshal(message)
-			client.send <- buf
+			client.send <- message
 		}
 	}
 }
@@ -394,7 +387,12 @@ func (client *Client) writePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+
+			p, err := json.Marshal(message)
+			if err != nil {
+				return
+			}
+			w.Write(p)
 
 			if err := w.Close(); err != nil {
 				return
@@ -441,13 +439,12 @@ func (client *Client) connectToPeers(room *Room) {
 			return
 		}
 
-		message, _ := json.Marshal(Message{
+		client.send <- &Message{
 			ChatroomID: room.id,
 			SenderID:   client.ID,
 			Action:     CandidateAction,
 			Content:    string(candidateString),
-		})
-		client.send <- message
+		}
 	})
 
 	// If PeerConnection is closed remove it from global list
