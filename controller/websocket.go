@@ -162,11 +162,11 @@ func (room *Room) run() {
 			room.broadcast <- room.listClients()
 
 		case client := <-room.unregister:
-			client.pc.Close()
-			client.pc = nil
-
 			delete(room.clients, client.id)
 			client.room = nil
+
+			client.pc.Close()
+			client.pc = nil
 
 			if len(room.clients) == 0 {
 				delete(hub.rooms, room.id)
