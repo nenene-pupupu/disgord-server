@@ -3,6 +3,7 @@ package controller
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"os"
@@ -41,6 +42,7 @@ func (*Controller) SignUp(c *gin.Context) {
 		SetUsername(body.Username).
 		SetPassword(hashPassword(body.Password)).
 		SetDisplayName(body.DisplayName).
+		SetProfileColorIndex(generateProfileColorIndex(body.Username, 4)).
 		Save(ctx)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{
@@ -50,6 +52,13 @@ func (*Controller) SignUp(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, user)
+}
+
+func generateProfileColorIndex(username string, size uint8) uint8 {
+	h := fnv.New32a()
+	h.Write([]byte(username))
+	hash := h.Sum32()
+	return uint8(hash)%size + 1
 }
 
 type Token struct {

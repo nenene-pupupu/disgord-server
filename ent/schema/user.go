@@ -25,6 +25,9 @@ func (User) Fields() []ent.Field {
 
 		field.String("display_name"),
 
+		field.Uint8("profile_color_index").
+			Immutable(),
+
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
