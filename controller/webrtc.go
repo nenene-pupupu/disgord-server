@@ -103,10 +103,8 @@ func (room *Room) signalPeerConnections() {
 			}
 
 			client.send <- &Message{
-				ChatroomID: room.id,
-				SenderID:   client.ID,
-				Action:     OfferAction,
-				Content:    string(offerString),
+				Action:  OfferAction,
+				Content: string(offerString),
 			}
 		}
 

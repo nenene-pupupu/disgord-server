@@ -284,11 +284,11 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 //	@Summary		join the chatroom, with password if it is private
 //	@Param			uri				path	controller.JoinChatroom.Uri		true	"uri"
 //	@Param			Authorization	header	string							true	"Bearer AccessToken"
-//	@Param			body			body	controller.JoinChatroom.Body	false	"Request body"
-//	@Success		200				{array}	controller.Client
-//	@Failure		401				"incorrect password"
-//	@Failure		403				"not a member of the chatroom, password required"
-//	@Failure		404				"cannot find chatroom"
+//	@Param			body			body	controller.JoinChatroom.Body	true	"Request body"
+//	@Success		200
+//	@Failure		401	"incorrect password"
+//	@Failure		403	"not a member of the chatroom, password required"
+//	@Failure		404	"cannot find chatroom"
 //	@Router			/chatrooms/{id}/join [post]
 func (*Controller) JoinChatroom(c *gin.Context) {
 	type Uri struct {
@@ -301,6 +301,8 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 	}
 
 	type Body struct {
+		Muted    bool   `json:"muted" binding:"required"`
+		CamOn    bool   `json:"camOn" binding:"required"`
 		Password string `json:"password"`
 	}
 
@@ -363,9 +365,9 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 		return
 	}
 
-	clients := joinRoom(uri.ID, userID)
+	joinRoom(uri.ID, userID, body.Muted, body.CamOn)
 
-	c.JSON(http.StatusOK, clients)
+	c.Status(http.StatusOK)
 }
 
 // MakeChatroomPublic godoc
