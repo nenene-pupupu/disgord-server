@@ -46,9 +46,10 @@ var upgrader = websocket.Upgrader{
 //	@Param			access_token	query	string	true	"access token"
 //	@Security		BearerAuth
 //	@Success		101
-//	@Failure		401	"unauthorized"
-//	@Failure		404	"cannot find user"
-//	@Response		200	{object}	controller.Message
+//	@Failure		401		"unauthorized"
+//	@Failure		404		"cannot find user"
+//	@Response		1000	{object}	controller.Message				"SEND_TEXT message format"
+//	@Response		1001	{object}	controller.ListClients.Response	"LIST_USERS content format"
 //	@Router			/ws [get]
 func (*Controller) ConnectWebsocket(c *gin.Context) {
 	userID := getCurrentUserID(c)
@@ -162,7 +163,7 @@ func (room *Room) run() {
 			client.room = room
 			client.connectToPeers(room)
 
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case client := <-room.unregister:
 			delete(room.clients, client.ID)
@@ -176,7 +177,7 @@ func (room *Room) run() {
 				return
 			}
 
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case message := <-room.broadcast:
 			for _, client := range room.clients {
@@ -204,7 +205,20 @@ func joinRoom(roomID, clientID int, muted, camOn bool) {
 	}
 }
 
-func (room *Room) listClients() *Message {
+func kickAllClientsFromRoom(roomID int) {
+	room, ok := hub.rooms[roomID]
+	if !ok {
+		return
+	}
+
+	message := &Message{Action: KickedAction}
+	for _, client := range room.clients {
+		client.send <- message
+		room.unregister <- client
+	}
+}
+
+func (room *Room) ListClients() *Message {
 	keys := make([]int, 0, len(room.clients))
 	for k := range room.clients {
 		keys = append(keys, k)
@@ -226,19 +240,6 @@ func (room *Room) listClients() *Message {
 	return &Message{
 		Action:  ListUsersAction,
 		Content: string(b),
-	}
-}
-
-func kickAllClientsFromRoom(roomID int) {
-	room, ok := hub.rooms[roomID]
-	if !ok {
-		return
-	}
-
-	message := &Message{Action: KickedAction}
-	for _, client := range room.clients {
-		client.send <- message
-		room.unregister <- client
 	}
 }
 
@@ -367,7 +368,7 @@ func (client *Client) readPump() {
 
 		switch message.Action {
 		case ListUsersAction:
-			client.send <- room.listClients()
+			client.send <- room.ListClients()
 
 		case LeaveRoomAction:
 			room.unregister <- client
@@ -378,19 +379,19 @@ func (client *Client) readPump() {
 
 		case MuteAction:
 			client.Muted = true
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case UnmuteAction:
 			client.Muted = false
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case TurnOnCamAction:
 			client.CamOn = true
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case TurnOffCamAction:
 			client.CamOn = false
-			room.broadcast <- room.listClients()
+			room.broadcast <- room.ListClients()
 
 		case AnswerAction:
 			answer := webrtc.SessionDescription{}
@@ -510,7 +511,7 @@ func (client *Client) connectToPeers(room *Room) {
 	pc.OnTrack(func(t *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
 		// Create a track to fan out our incoming video to all peers
 		trackLocal := room.addTrack(t, client.ID)
-		room.broadcast <- room.listClients()
+		room.broadcast <- room.ListClients()
 		defer room.removeTrack(trackLocal, client.ID)
 
 		buf := make([]byte, 1500)
