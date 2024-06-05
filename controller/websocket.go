@@ -129,7 +129,7 @@ type Room struct {
 	broadcast   chan *Message
 	listLock    sync.RWMutex
 	trackLocals map[string]*webrtc.TrackLocalStaticRTP
-	tidTable    map[int]string
+	sidTable    map[int]string
 }
 
 func newRoom(id int) *Room {
@@ -141,7 +141,7 @@ func newRoom(id int) *Room {
 		broadcast:   make(chan *Message, 256),
 		listLock:    sync.RWMutex{},
 		trackLocals: map[string]*webrtc.TrackLocalStaticRTP{},
-		tidTable:    map[int]string{},
+		sidTable:    map[int]string{},
 	}
 
 	go room.run()
@@ -227,12 +227,12 @@ func (room *Room) ListClients() *Message {
 
 	type Response struct {
 		*Client
-		TrackID string `json:"trackId,omitempty"`
+		StreamID string `json:"streamId,omitempty"`
 	}
 
 	response := make([]*Response, 0, len(keys))
 	for _, k := range keys {
-		response = append(response, &Response{room.clients[k], room.tidTable[k]})
+		response = append(response, &Response{room.clients[k], room.sidTable[k]})
 	}
 
 	b, _ := json.Marshal(response)

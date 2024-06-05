@@ -23,7 +23,7 @@ func (room *Room) addTrack(t *webrtc.TrackRemote, clientID int) *webrtc.TrackLoc
 	}
 
 	room.trackLocals[t.ID()] = trackLocal
-	room.tidTable[clientID] = t.ID()
+	room.sidTable[clientID] = t.StreamID()
 	return trackLocal
 }
 
@@ -36,7 +36,7 @@ func (room *Room) removeTrack(t *webrtc.TrackLocalStaticRTP, clientID int) {
 	}()
 
 	delete(room.trackLocals, t.ID())
-	delete(room.tidTable, clientID)
+	delete(room.sidTable, clientID)
 }
 
 // signalPeerConnections updates each PeerConnection so that it is getting all the expected media tracks
