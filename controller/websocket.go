@@ -328,8 +328,8 @@ func (client *Client) readPump() {
 	})
 
 	for {
-		var message *Message
-		err := client.conn.ReadJSON(&message)
+		message := &Message{}
+		err := client.conn.ReadJSON(message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -339,6 +339,7 @@ func (client *Client) readPump() {
 
 		message.Name = client.Name
 		message.Color = client.Color
+		message.CreatedAt = &time.Time{}
 		*message.CreatedAt = time.Now()
 
 		pretty, _ := json.MarshalIndent(message, "", "  ")
