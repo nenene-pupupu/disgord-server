@@ -148,7 +148,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 
 // UpdateChatroom godoc
 //
-//	@Description	If password is not provided, it will be public, e.g. clear the password and the member list.
+//	@Description	If password is not provided, it will be public, i.e. clear the password and the member list.
 //	@Tags			chatroom
 //	@Summary		update the chatroom
 //	@Param			uri				path	controller.UpdateChatroom.Uri	true	"uri"
