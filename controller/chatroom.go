@@ -184,9 +184,13 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		chatroomUpdate = chatroomUpdate.SetName(body.Name)
 	}
 	if body.Password != "" {
-		chatroomUpdate = chatroomUpdate.
-			SetIsPrivate(true).
-			SetPassword(hashPassword(body.Password))
+		chatroomUpdate = chatroomUpdate.SetPassword(hashPassword(body.Password))
+
+		if !chatroom.IsPrivate {
+			chatroomUpdate = chatroomUpdate.
+				SetIsPrivate(true).
+				AddMemberIDs(userID)
+		}
 	}
 
 	chatroom, err = chatroomUpdate.Save(ctx)
