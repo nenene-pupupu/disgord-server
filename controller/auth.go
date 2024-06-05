@@ -18,17 +18,18 @@ import (
 
 // SignUp godoc
 //
-//	@Tags		auth
-//	@Summary	sign up and create a new user
-//	@Param		body	body		controller.SignUp.Body	true	"Request body"
-//	@Success	201		{object}	ent.User
-//	@Failure	409		"username already exists"
-//	@Router		/auth/sign-up [post]
+//	@Description	If displayName is not provided, it will be set to the username.
+//	@Tags			auth
+//	@Summary		sign up and create a new user
+//	@Param			body	body		controller.SignUp.Body	true	"Request body"
+//	@Success		201		{object}	ent.User
+//	@Failure		409		"username already exists"
+//	@Router			/auth/sign-up [post]
 func (*Controller) SignUp(c *gin.Context) {
 	type Body struct {
 		Username    string `json:"username" binding:"required"`
 		Password    string `json:"password" binding:"required"`
-		DisplayName string `json:"displayName" binding:"required"`
+		DisplayName string `json:"displayName"`
 	}
 
 	var body Body
@@ -36,13 +37,18 @@ func (*Controller) SignUp(c *gin.Context) {
 		return
 	}
 
-	user, err := client.User.
+	userCreate := client.User.
 		Create().
 		SetUsername(body.Username).
 		SetPassword(hashPassword(body.Password)).
-		SetDisplayName(body.DisplayName).
-		SetProfileColorIndex(generateProfileColorIndex(body.Username, 4)).
-		Save(ctx)
+		SetProfileColorIndex(generateProfileColorIndex(body.Username, 4))
+	if body.DisplayName != "" {
+		userCreate = userCreate.SetDisplayName(body.DisplayName)
+	} else {
+		userCreate = userCreate.SetDisplayName(body.Username)
+	}
+
+	user, err := userCreate.Save(ctx)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"message": "username already exists",
