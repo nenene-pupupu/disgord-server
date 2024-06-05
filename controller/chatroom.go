@@ -87,6 +87,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 //	@Security	BearerAuth
 //	@Success	201	{object}	ent.Chatroom
 //	@Failure	401	"unauthorized"
+//	@Failure	404	"cannot find user"
 //	@Router		/chatrooms [post]
 func (*Controller) CreateChatroom(c *gin.Context) {
 	type Body struct {
@@ -101,10 +102,27 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 
 	userID := getCurrentUserID(c)
 
-	chatroomCreate := client.Chatroom.
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	user, err := tx.User.Get(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
+
+	chatroomCreate := tx.Chatroom.
 		Create().
 		SetName(body.Name).
-		SetOwnerID(userID)
+		SetOwnerID(userID).
+		SetProfileColorIndex(user.ProfileColorIndex)
 	if body.Password != "" {
 		chatroomCreate = chatroomCreate.
 			SetIsPrivate(true).
@@ -114,6 +132,12 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 
 	chatroom, err := chatroomCreate.Save(ctx)
 	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return

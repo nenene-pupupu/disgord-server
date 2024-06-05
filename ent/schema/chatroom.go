@@ -28,6 +28,9 @@ func (Chatroom) Fields() []ent.Field {
 
 		field.Int("owner_id"),
 
+		field.Uint8("profile_color_index").
+			Immutable(),
+
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
