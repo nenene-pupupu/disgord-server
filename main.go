@@ -69,6 +69,9 @@ func main() {
 		{
 			chat.GET("", c.GetAllChats)
 			chat.GET("/:id", c.GetChatByID)
+			chat.POST("", c.CreateChat)
+			chat.PATCH("/:id", c.UpdateChat)
+			chat.DELETE("/:id", c.DeleteChat)
 		}
 
 		ws := private.Group("/ws")
