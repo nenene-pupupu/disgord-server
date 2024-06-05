@@ -20,7 +20,8 @@ func main() {
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
+	config.AllowOrigins = []string{"http://localhost:5173"}
+	config.AllowCredentials = true
 	config.AllowWebSockets = true
 	config.AddAllowHeaders("Authorization")
 	r.Use(cors.New(config))
@@ -33,6 +34,8 @@ func main() {
 		{
 			auth.POST("/sign-up", c.SignUp)
 			auth.POST("/sign-in", c.SignIn)
+			auth.POST("/refresh", c.Refresh)
+			auth.POST("/sign-out", c.SignOut)
 		}
 
 		chatroom := public.Group("/chatrooms")

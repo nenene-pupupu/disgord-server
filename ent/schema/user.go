@@ -23,6 +23,10 @@ func (User) Fields() []ent.Field {
 		field.String("password").
 			Sensitive(),
 
+		field.String("refresh_token").
+			Optional().
+			Sensitive(),
+
 		field.String("display_name"),
 
 		field.Uint8("profile_color_index").

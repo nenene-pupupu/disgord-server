@@ -2,7 +2,6 @@ package controller
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"hash/fnv"
 	"log"
 	"net/http"
@@ -86,7 +85,15 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	user, err := client.User.
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	user, err := tx.User.
 		Query().
 		Where(user.Username(body.Username)).
 		Only(ctx)
@@ -104,16 +111,134 @@ func (*Controller) SignIn(c *gin.Context) {
 		return
 	}
 
-	tokenString, err := issueToken(user.ID)
+	accessToken, refreshToken, err := issueToken(user.ID)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
 
+	_, err = user.Update().
+		SetRefreshToken(refreshToken).
+		Save(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("refreshToken", refreshToken, 60*60*24*14, "/", "", true, true)
+
 	c.JSON(http.StatusOK, Token{
-		AccessToken: tokenString,
+		AccessToken: accessToken,
 	})
+}
+
+// Refresh godoc
+//
+//	@Tags		auth
+//	@Summary	refresh an access token
+//	@Success	200	{object}	controller.Token
+//	@Failure	401	"unauthorized"
+//	@Failure	404	"cannot find user"
+//	@Router		/auth/refresh [post]
+func (*Controller) Refresh(c *gin.Context) {
+	userID, err := extractUserID(c.Request, cookieExtractor)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	defer tx.Rollback()
+
+	user, err := tx.User.Get(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "cannot find user",
+		})
+		return
+	}
+
+	refreshToken, _ := c.Cookie("refreshToken")
+	if user.RefreshToken != refreshToken {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	accessToken, refreshToken, err := issueToken(userID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	_, err = user.Update().
+		SetRefreshToken(refreshToken).
+		Save(ctx)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("refreshToken", refreshToken, 60*60*24*14, "/", "", true, true)
+
+	c.JSON(http.StatusOK, Token{
+		AccessToken: accessToken,
+	})
+}
+
+// SignOut godoc
+//
+//	@Tags		auth
+//	@Summary	sign out and revoke the refresh token
+//	@Success	200
+//	@Router		/auth/sign-out [post]
+func (*Controller) SignOut(c *gin.Context) {
+	userID, err := extractUserID(
+		c.Request,
+		&request.MultiExtractor{
+			request.OAuth2Extractor,
+			cookieExtractor,
+		},
+	)
+	if err == nil {
+		client.User.
+			UpdateOneID(userID).
+			ClearRefreshToken().
+			Save(ctx)
+
+		disconnect(userID)
+	}
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("refreshToken", "", -1, "/", "", true, true)
+
+	c.Status(http.StatusOK)
 }
 
 var key *ecdsa.PrivateKey
@@ -137,19 +262,8 @@ type Claims struct {
 
 func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, err := request.ParseFromRequest(
-			c.Request,
-			request.OAuth2Extractor,
-			func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-
-				return key.Public(), nil
-			},
-			request.WithClaims(&Claims{}),
-		)
-		if err != nil || token == nil || !token.Valid {
+		userID, err := extractUserID(c.Request, request.OAuth2Extractor)
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"message": "unauthorized",
 			})
@@ -157,9 +271,8 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		userID := token.Claims.(*Claims).UserID
-
 		c.Set("userID", userID)
+
 		c.Next()
 	}
 }
@@ -169,17 +282,27 @@ func getCurrentUserID(c *gin.Context) int {
 	return userID.(int)
 }
 
-func issueToken(userID int) (string, error) {
+func issueToken(userID int) (string, string, error) {
 	claims := Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	return token.SignedString(key)
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30))
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodES256, claims).SignedString(key)
+	if err != nil {
+		return "", "", err
+	}
+
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 14))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodES256, claims).SignedString(key)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func hashPassword(password string) string {
@@ -194,4 +317,37 @@ func hashPassword(password string) string {
 func verifyPassword(hash, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+var cookieExtractor = &CookieExtractor{}
+
+type CookieExtractor struct {
+	request.Extractor
+}
+
+func (e *CookieExtractor) ExtractToken(req *http.Request) (string, error) {
+	cookie, err := req.Cookie("refreshToken")
+	if err != nil {
+		return "", request.ErrNoTokenInRequest
+	}
+
+	return cookie.Value, nil
+}
+
+func extractUserID(req *http.Request, extractor request.Extractor) (int, error) {
+	token, err := request.ParseFromRequest(
+		req,
+		extractor,
+		func(*jwt.Token) (interface{}, error) { return key.Public(), nil },
+		request.WithClaims(&Claims{}),
+		request.WithParser(jwt.NewParser(
+			jwt.WithValidMethods([]string{jwt.SigningMethodES256.Name}),
+			jwt.WithIssuedAt(),
+		)),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return token.Claims.(*Claims).UserID, nil
 }

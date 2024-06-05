@@ -121,6 +121,13 @@ func (hub *Hub) createRoom(id int) (room *Room) {
 	return
 }
 
+func disconnect(clientID int) {
+	client, ok := hub.clients[clientID]
+	if ok {
+		hub.unregister <- client
+	}
+}
+
 type Room struct {
 	id          int
 	clients     map[int]*Client
