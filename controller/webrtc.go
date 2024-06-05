@@ -9,7 +9,7 @@ import (
 )
 
 // Add to list of tracks and fire renegotation for all PeerConnections
-func (room *Room) addTrack(t *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
+func (room *Room) addTrack(t *webrtc.TrackRemote, clientID int) *webrtc.TrackLocalStaticRTP {
 	room.listLock.Lock()
 	defer func() {
 		room.listLock.Unlock()
@@ -23,11 +23,12 @@ func (room *Room) addTrack(t *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
 	}
 
 	room.trackLocals[t.ID()] = trackLocal
+	room.tidTable[clientID] = t.ID()
 	return trackLocal
 }
 
 // Remove from list of tracks and fire renegotation for all PeerConnections
-func (room *Room) removeTrack(t *webrtc.TrackLocalStaticRTP) {
+func (room *Room) removeTrack(t *webrtc.TrackLocalStaticRTP, clientID int) {
 	room.listLock.Lock()
 	defer func() {
 		room.listLock.Unlock()
@@ -35,6 +36,7 @@ func (room *Room) removeTrack(t *webrtc.TrackLocalStaticRTP) {
 	}()
 
 	delete(room.trackLocals, t.ID())
+	delete(room.tidTable, clientID)
 }
 
 // signalPeerConnections updates each PeerConnection so that it is getting all the expected media tracks

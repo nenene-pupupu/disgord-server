@@ -128,6 +128,7 @@ type Room struct {
 	broadcast   chan *Message
 	listLock    sync.RWMutex
 	trackLocals map[string]*webrtc.TrackLocalStaticRTP
+	tidTable    map[int]string
 }
 
 func newRoom(id int) *Room {
@@ -139,6 +140,7 @@ func newRoom(id int) *Room {
 		broadcast:   make(chan *Message, 256),
 		listLock:    sync.RWMutex{},
 		trackLocals: map[string]*webrtc.TrackLocalStaticRTP{},
+		tidTable:    map[int]string{},
 	}
 
 	go room.run()
@@ -209,12 +211,17 @@ func (room *Room) listClients() *Message {
 	}
 	sort.Ints(keys)
 
-	clients := make([]*Client, 0, len(room.clients))
-	for _, k := range keys {
-		clients = append(clients, room.clients[k])
+	type Response struct {
+		*Client
+		TrackID string `json:"trackId,omitempty"`
 	}
 
-	b, _ := json.Marshal(clients)
+	response := make([]*Response, 0, len(keys))
+	for _, k := range keys {
+		response = append(response, &Response{room.clients[k], room.tidTable[k]})
+	}
+
+	b, _ := json.Marshal(response)
 
 	return &Message{
 		Action:  ListUsersAction,
@@ -502,8 +509,9 @@ func (client *Client) connectToPeers(room *Room) {
 
 	pc.OnTrack(func(t *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
 		// Create a track to fan out our incoming video to all peers
-		trackLocal := room.addTrack(t)
-		defer room.removeTrack(trackLocal)
+		trackLocal := room.addTrack(t, client.ID)
+		room.broadcast <- room.listClients()
+		defer room.removeTrack(trackLocal, client.ID)
 
 		buf := make([]byte, 1500)
 		for {
