@@ -339,7 +339,7 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 				return
 			}
 
-			if !verifyPassword(body.Password, chatroom.Password) {
+			if !verifyPassword(chatroom.Password, body.Password) {
 				c.JSON(http.StatusForbidden, gin.H{
 					"message": "incorrect password",
 				})
