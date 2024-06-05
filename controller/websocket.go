@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -98,15 +99,15 @@ func (hub *Hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
-			hub.clients[client.id] = client
+			hub.clients[client.ID] = client
 
 		case client := <-hub.unregister:
 			if client.room != nil {
 				client.room.unregister <- client
 			}
 
-			if _, ok := hub.clients[client.id]; ok {
-				delete(hub.clients, client.id)
+			if _, ok := hub.clients[client.ID]; ok {
+				delete(hub.clients, client.ID)
 				close(client.send)
 			}
 		}
@@ -155,14 +156,14 @@ func (room *Room) run() {
 	for {
 		select {
 		case client := <-room.register:
-			room.clients[client.id] = client
+			room.clients[client.ID] = client
 			client.room = room
 			client.connectToPeers(room)
 
 			room.broadcast <- room.listClients()
 
 		case client := <-room.unregister:
-			delete(room.clients, client.id)
+			delete(room.clients, client.ID)
 			client.room = nil
 
 			client.pc.Close()
@@ -180,7 +181,7 @@ func (room *Room) run() {
 				select {
 				case client.send <- message:
 				default:
-					delete(room.clients, client.id)
+					delete(room.clients, client.ID)
 				}
 			}
 		}
@@ -202,9 +203,15 @@ func joinRoom(roomID, clientID int, muted, camOn bool) {
 }
 
 func (room *Room) listClients() *Message {
+	keys := make([]int, 0, len(room.clients))
+	for k := range room.clients {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
 	clients := make([]*Client, 0, len(room.clients))
-	for _, client := range room.clients {
-		clients = append(clients, client)
+	for _, k := range keys {
+		clients = append(clients, room.clients[k])
 	}
 
 	b, _ := json.Marshal(clients)
@@ -274,7 +281,7 @@ const (
 )
 
 type Client struct {
-	id    int                    `json:"-"`
+	ID    int                    `json:"userId" binding:"required"`
 	conn  *websocket.Conn        `json:"-"`
 	send  chan *Message          `json:"-"`
 	room  *Room                  `json:"-"`
@@ -287,7 +294,7 @@ type Client struct {
 
 func newClient(conn *websocket.Conn, user *ent.User) *Client {
 	client := &Client{
-		id:    user.ID,
+		ID:    user.ID,
 		conn:  conn,
 		send:  make(chan *Message, 256),
 		Name:  user.DisplayName,
@@ -359,7 +366,7 @@ func (client *Client) readPump() {
 			room.unregister <- client
 
 		case SendTextAction:
-			saveChat(room.id, client.id, message.Content)
+			saveChat(room.id, client.ID, message.Content)
 			room.broadcast <- message
 
 		case MuteAction:
