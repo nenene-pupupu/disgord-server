@@ -100,6 +100,11 @@ func (hub *Hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
+			if _, ok := hub.clients[client.ID]; ok {
+				close(client.send)
+				continue
+			}
+
 			hub.clients[client.ID] = client
 
 		case client := <-hub.unregister:
@@ -107,7 +112,7 @@ func (hub *Hub) run() {
 				client.room.unregister <- client
 			}
 
-			if _, ok := hub.clients[client.ID]; ok {
+			if client == hub.clients[client.ID] {
 				delete(hub.clients, client.ID)
 				close(client.send)
 			}
