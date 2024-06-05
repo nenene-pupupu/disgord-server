@@ -149,7 +149,8 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 //	@Param		body			body	controller.CancelAccount.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"invalid password"
+//	@Failure	401	"unauthorized"
+//	@Failure	403	"incorrect password"
 //	@Failure	404	"cannot find user"
 //	@Router		/users/me [delete]
 func (*Controller) CancelAccount(c *gin.Context) {
@@ -181,8 +182,8 @@ func (*Controller) CancelAccount(c *gin.Context) {
 	}
 
 	if !verifyPassword(user.Password, body.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "invalid password",
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "incorrect password",
 		})
 		return
 	}

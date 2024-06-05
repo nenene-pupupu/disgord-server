@@ -284,7 +284,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 //	@Param			body			body	controller.JoinChatroom.Body	true	"Request body"
 //	@Security		BearerAuth
 //	@Success		200
-//	@Failure		401	"incorrect password"
+//	@Failure		401	"unauthorized"
 //	@Failure		403	"not a member of the chatroom, password required"
 //	@Failure		404	"cannot find chatroom"
 //	@Router			/chatrooms/{id}/join [post]
@@ -340,7 +340,7 @@ func (*Controller) JoinChatroom(c *gin.Context) {
 			}
 
 			if !verifyPassword(body.Password, chatroom.Password) {
-				c.JSON(http.StatusUnauthorized, gin.H{
+				c.JSON(http.StatusForbidden, gin.H{
 					"message": "incorrect password",
 				})
 				return
