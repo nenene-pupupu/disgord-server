@@ -14,7 +14,7 @@ import (
 //	@Param		Authorization	header	string	true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{array}	ent.User
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Router		/users [get]
 func (*Controller) GetAllUsers(c *gin.Context) {
 	users, err := client.User.
@@ -37,7 +37,7 @@ func (*Controller) GetAllUsers(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find user"
 //	@Router		/users/{id} [get]
 func (*Controller) GetUserByID(c *gin.Context) {
@@ -68,7 +68,7 @@ func (*Controller) GetUserByID(c *gin.Context) {
 //	@Param		Authorization	header	string	true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find user"
 //	@Router		/users/me [get]
 func (*Controller) GetMyProfile(c *gin.Context) {
@@ -93,7 +93,7 @@ func (*Controller) GetMyProfile(c *gin.Context) {
 //	@Param		body			body	controller.UpdateMyProfile.Body	false	"Request body"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.User
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find user"
 //	@Router		/users/me [patch]
 func (*Controller) UpdateMyProfile(c *gin.Context) {
@@ -149,7 +149,7 @@ func (*Controller) UpdateMyProfile(c *gin.Context) {
 //	@Param		body			body	controller.CancelAccount.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	403	"incorrect password"
 //	@Failure	404	"cannot find user"
 //	@Router		/users/me [delete]

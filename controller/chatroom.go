@@ -54,7 +54,7 @@ func (*Controller) GetAllChatrooms(c *gin.Context) {
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chatroom
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find chatroom"
 //	@Router		/chatrooms/{id} [get]
 func (*Controller) GetChatroomByID(c *gin.Context) {
@@ -86,7 +86,7 @@ func (*Controller) GetChatroomByID(c *gin.Context) {
 //	@Param		body			body	controller.CreateChatroom.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	201	{object}	ent.Chatroom
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find user"
 //	@Router		/chatrooms [post]
 func (*Controller) CreateChatroom(c *gin.Context) {
@@ -156,7 +156,7 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 //	@Param			body			body	controller.UpdateChatroom.Body	false	"Request body"
 //	@Security		BearerAuth
 //	@Success		200	{object}	ent.Chatroom
-//	@Failure		401	"unauthorized"
+//	@Failure		401
 //	@Failure		403	"chatroom owner only"
 //	@Failure		404	"cannot find chatroom"
 //	@Router			/chatrooms/{id} [patch]
@@ -247,7 +247,7 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 //	@Param		Authorization	header	string							true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	403	"chatroom owner only"
 //	@Failure	404	"cannot find chatroom"
 //	@Router		/chatrooms/{id} [delete]
@@ -318,7 +318,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 //	@Param			body			body	controller.JoinChatroom.Body	true	"Request body"
 //	@Security		BearerAuth
 //	@Success		200
-//	@Failure		401	"unauthorized"
+//	@Failure		401
 //	@Failure		403	"not a member of the chatroom, password required"
 //	@Failure		404	"cannot find chatroom"
 //	@Router			/chatrooms/{id}/join [post]

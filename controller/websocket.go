@@ -46,7 +46,7 @@ var upgrader = websocket.Upgrader{
 //	@Param			access_token	query	string	true	"access token"
 //	@Security		BearerAuth
 //	@Success		101
-//	@Failure		401		"unauthorized"
+//	@Failure		401
 //	@Failure		404		"cannot find user"
 //	@Response		1000	{object}	controller.Message				"SEND_TEXT message format"
 //	@Response		1001	{object}	controller.ListClients.Response	"LIST_USERS content format"

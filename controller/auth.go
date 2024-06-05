@@ -152,15 +152,13 @@ func (*Controller) SignIn(c *gin.Context) {
 //	@Tags		auth
 //	@Summary	refresh an access token
 //	@Success	200	{object}	controller.Token
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find user"
 //	@Router		/auth/refresh [post]
 func (*Controller) Refresh(c *gin.Context) {
 	userID, err := extractUserID(c.Request, cookieExtractor)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -182,9 +180,7 @@ func (*Controller) Refresh(c *gin.Context) {
 
 	refreshToken, _ := c.Cookie("refreshToken")
 	if user.RefreshToken != refreshToken {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "unauthorized",
-		})
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -270,9 +266,7 @@ func (*Controller) JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := extractUserID(c.Request, request.OAuth2Extractor)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "unauthorized",
-			})
+			c.Status(http.StatusUnauthorized)
 			c.Abort()
 			return
 		}

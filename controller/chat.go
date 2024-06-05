@@ -21,7 +21,7 @@ import (
 //	@Param			Authorization	header	string							true	"Bearer AccessToken"
 //	@Security		BearerAuth
 //	@Success		200	{array}	controller.GetAllChats.Response
-//	@Failure		401	"unauthorized"
+//	@Failure		401
 //	@Router			/chats [get]
 func (*Controller) GetAllChats(c *gin.Context) {
 	type Query struct {
@@ -93,7 +93,7 @@ func (*Controller) GetAllChats(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chat
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	404	"cannot find chat"
 //	@Router		/chats/{id} [get]
 func (*Controller) GetChatByID(c *gin.Context) {
@@ -125,7 +125,7 @@ func (*Controller) GetChatByID(c *gin.Context) {
 //	@Param		body			body	controller.CreateChat.Body	true	"Request body"
 //	@Security	BearerAuth
 //	@Success	201	{object}	ent.Chat
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Router		/chats [post]
 func (*Controller) CreateChat(c *gin.Context) {
 	type Body struct {
@@ -163,7 +163,7 @@ func (*Controller) CreateChat(c *gin.Context) {
 //	@Param		body			body	controller.UpdateChat.Body	false	"Request body"
 //	@Security	BearerAuth
 //	@Success	200	{object}	ent.Chat
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	403	"chat sender only"
 //	@Failure	404	"cannot find chat"
 //	@Router		/chats/{id} [patch]
@@ -240,7 +240,7 @@ func (*Controller) UpdateChat(c *gin.Context) {
 //	@Param		Authorization	header	string						true	"Bearer AccessToken"
 //	@Security	BearerAuth
 //	@Success	204
-//	@Failure	401	"unauthorized"
+//	@Failure	401
 //	@Failure	403	"chat sender only"
 //	@Failure	404	"cannot find chat"
 //	@Router		/chats/{id} [delete]
