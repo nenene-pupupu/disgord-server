@@ -6,17 +6,13 @@
     go version
     ```
 
-1. execute shell script `init.sh`, which will create dummy data for test.
+1. execute shell script `init.sh` for initial settings
     ```sh
-    chmod +x init.sh
     ./init.sh
     ```
 
 1. run server
     ```sh
-    go build && ./disgord
-
-    # or
     go run main.go
     ```
 
