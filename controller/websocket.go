@@ -94,6 +94,14 @@ func init() {
 	}
 
 	go hub.run()
+
+	go func() {
+		for range time.NewTicker(time.Second * 3).C {
+			for _, room := range hub.rooms {
+				go room.dispatchKeyFrame()
+			}
+		}
+	}()
 }
 
 func (hub *Hub) run() {
@@ -157,12 +165,6 @@ func newRoom(id int) *Room {
 	}
 
 	go room.run()
-
-	go func() {
-		for range time.NewTicker(time.Second * 3).C {
-			room.dispatchKeyFrame()
-		}
-	}()
 
 	return room
 }
