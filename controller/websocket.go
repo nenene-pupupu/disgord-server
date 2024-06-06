@@ -128,12 +128,6 @@ func (hub *Hub) run() {
 	}
 }
 
-func (hub *Hub) createRoom(id int) (room *Room) {
-	room = newRoom(id)
-	hub.rooms[id] = room
-	return
-}
-
 func disconnect(clientID int) {
 	client, ok := hub.clients[clientID]
 	if ok {
@@ -208,7 +202,8 @@ func (room *Room) run() {
 func joinRoom(roomID, clientID int, muted, camOn bool) {
 	room, ok := hub.rooms[roomID]
 	if !ok {
-		room = hub.createRoom(roomID)
+		room = newRoom(roomID)
+		hub.rooms[roomID] = room
 	}
 
 	client, ok := hub.clients[clientID]
