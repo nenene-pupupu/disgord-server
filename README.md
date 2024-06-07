@@ -1,14 +1,10 @@
 # disGOrd
 
 ## How to Run
-1. check if `go` is installed
+1. for initial settings, run
     ```sh
-    go version
-    ```
-
-1. execute shell script `init.sh` for initial settings
-    ```sh
-    ./init.sh
+    go run keygen.go
+    go generate ./...
     ```
 
 1. run server
