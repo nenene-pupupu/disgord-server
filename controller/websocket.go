@@ -37,6 +37,7 @@ var upgrader = websocket.Upgrader{
 //	@Description	If any user sends SEND_TEXT, you will receive the same message.
 //	@Description	If any user sends other action messages, you will receive LIST_USERS with a list of users in the chatroom.
 //	@Description	If you receive KICKED, you should know that you are kicked from the chatroom.
+//	@Description	If you receive ROOM_LIST_UPDATED, you should update chatroom list with the API.
 //	@Description	If you receive INVALID, you should know that the message you sent is invalid.
 //	@Description
 //	@Description	To connect WebRTC, if you receive OFFER with offer content, you should send ANSWER with answer content.
@@ -125,6 +126,12 @@ func (hub *Hub) run() {
 				close(client.send)
 			}
 		}
+	}
+}
+
+func broadcastToAll(message *Message) {
+	for _, client := range hub.clients {
+		client.send <- message
 	}
 }
 
@@ -267,6 +274,8 @@ const (
 	TurnOffCamAction = "TURN_OFF_CAM"
 
 	KickedAction = "KICKED"
+
+	RoomListUpdatedAction = "ROOM_LIST_UPDATED"
 
 	OfferAction     = "OFFER"
 	AnswerAction    = "ANSWER"

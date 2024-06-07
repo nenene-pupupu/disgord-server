@@ -143,6 +143,8 @@ func (*Controller) CreateChatroom(c *gin.Context) {
 		return
 	}
 
+	broadcastToAll(&Message{Action: RoomListUpdatedAction})
+
 	c.JSON(http.StatusCreated, chatroom)
 }
 
@@ -236,6 +238,8 @@ func (*Controller) UpdateChatroom(c *gin.Context) {
 		return
 	}
 
+	broadcastToAll(&Message{Action: RoomListUpdatedAction})
+
 	c.JSON(http.StatusOK, chatroom)
 }
 
@@ -303,6 +307,7 @@ func (*Controller) DeleteChatroom(c *gin.Context) {
 	}
 
 	kickAllClientsFromRoom(uri.ID)
+	broadcastToAll(&Message{Action: RoomListUpdatedAction})
 
 	c.Status(http.StatusNoContent)
 }
