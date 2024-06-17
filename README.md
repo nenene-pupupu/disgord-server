@@ -1,6 +1,6 @@
 # disGOrd
 
-## How to Run
+## How to run
 1. for initial settings, run
     ```sh
     go run keygen.go
@@ -21,7 +21,7 @@
 ## It supports
 - real-time text chat with multiple clients through WebSocket
 - SFU media server for real-time voice/video chat
-- JWT user authorization based on Refresh Token Rotation
+- JWT user authentication based on Refresh Token Rotation
 - public/private chatroom
 - previous chat history of the chatroom
 
@@ -33,3 +33,4 @@
 - [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3): sqlite3 driver for go
 - [golang-jwt/jwt](https://github.com/golang-jwt/jwt): Golang implementation of JSON Web Tokens (JWT)
 - [swaggo/swag](https://github.com/swaggo/swag): RESTful API documentation with Swagger 2.0 for Go
+- [air-verse/air](https://github.com/air-verse/air): Live reload for Go apps
